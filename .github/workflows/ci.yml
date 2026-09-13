@@ -10,6 +10,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      # the default token is read-only in this repo; the release step needs write
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
