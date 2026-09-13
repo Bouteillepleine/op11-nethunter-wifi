@@ -1,3 +1,6 @@
+# OP11 NetHunter Wi-Fi
+# Copyright (C) 2026 Bouteillepleine
+# SPDX-License-Identifier: GPL-2.0-or-later
 MODDIR=${0%/*}
 # Firmware ships as system/etc/firmware/... so magic mount exposes it at
 # /etc/firmware, which is already in ueventd's search list. The module dir

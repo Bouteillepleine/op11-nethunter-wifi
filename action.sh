@@ -1,3 +1,6 @@
+# OP11 NetHunter Wi-Fi
+# Copyright (C) 2026 Bouteillepleine
+# SPDX-License-Identifier: GPL-2.0-or-later
 MODDIR=${0%/*}
 echo "[*] Loading Nethunter Wi-Fi injection drivers..."
 # rtw_8812au needs rtw_core, rtw_usb, rtw_88xxa and rtw_8812a first, and a

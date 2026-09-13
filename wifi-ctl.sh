@@ -1,4 +1,7 @@
 #!/system/bin/sh
+# OP11 NetHunter Wi-Fi
+# Copyright (C) 2026 Bouteillepleine
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Backend for the OP11 Nethunter Wi-Fi module WebUI. All output on stdout.
 MODDIR=${0%/*}
 DRV="$MODDIR/drivers"

@@ -1,3 +1,6 @@
+# OP11 NetHunter Wi-Fi
+# Copyright (C) 2026 Bouteillepleine
+# SPDX-License-Identifier: GPL-2.0-or-later
 ui_print "  OP11 Nethunter Wi-Fi injection drivers"
 ui_print "  - RTL8812AU/8821AU via rtw88, ath9k, mt76, rt2800"
 ui_print "  - Bundled static iw 6.17 (no chroot needed)"

@@ -7,7 +7,8 @@ firmware, a bundled userland and a WebUI.
 deauthentication frames and PMKID solicitation are not passive, and in most places
 pointing them at someone else's network is a criminal offence.
 
-Bundled binaries and firmware are third-party, listed in [THIRD-PARTY.md](THIRD-PARTY.md). Several are GPL-licensed; corresponding source is linked there.
+GPL-2.0-or-later, see [LICENSE](LICENSE). Bundled binaries and firmware are third-party,
+listed with their own licences and upstreams in [THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## Compatibility
 

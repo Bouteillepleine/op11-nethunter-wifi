@@ -1,3 +1,6 @@
+# OP11 NetHunter Wi-Fi
+# Copyright (C) 2026 Bouteillepleine
+# SPDX-License-Identifier: GPL-2.0-or-later
 MODDIR=${0%/*}
 [ -f "$MODDIR/auto_load" ] || exit 0
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 1; done

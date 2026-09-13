@@ -16,7 +16,7 @@ The rtw88 drivers come from [lwfinger/rtw88](https://github.com/lwfinger/rtw88).
 | binary | upstream | licence |
 |---|---|---|
 | `hcxpcapngtool` | [ZerBea/hcxtools](https://github.com/ZerBea/hcxtools) | MIT |
-| `kocrc` | `tools/kocrc.c` in this repo | same as this repo |
+| `kocrc` | `tools/kocrc.c` in this repo | GPL-2.0-or-later |
 | `hcxdumptool` | [ZerBea/hcxdumptool](https://github.com/ZerBea/hcxdumptool) | MIT |
 | `aircrack-ng` | [aircrack-ng](https://github.com/aircrack-ng/aircrack-ng) | GPL-2.0 |
 | `mdk4` | [aircrack-ng/mdk4](https://github.com/aircrack-ng/mdk4) | GPL-2.0 |

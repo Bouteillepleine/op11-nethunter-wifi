@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 Bouteillepleine
 // Print the symbol CRCs of a kernel module.
 //   kocrc -e mod.ko   what it EXPORTS   (__crc_<sym> entries in .symtab)
 //   kocrc -i mod.ko   what it IMPORTS   (the __versions section)
