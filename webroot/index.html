@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>OP11 Nethunter Wi-Fi</title>
+<style>
+:root{
+  --bg:#0e1116; --card:#161b22; --card2:#1c232d; --line:#2a323d;
+  --tx:#e6edf3; --mut:#8b949e; --acc:#ff7a1a; --acc2:#ffb057;
+  --ok:#3fb950; --bad:#f85149; --warn:#d29922; --radius:16px;
+  --navbg:rgba(24,29,38,.72); --navline:rgba(255,255,255,.12);
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]){--bg:#f4f6f8;--card:#fff;--card2:#f0f2f5;--line:#dfe3e8;--tx:#1a1f24;--mut:#5a6470;
+    --navbg:rgba(255,255,255,.72);--navline:rgba(0,0,0,.08);}
+}
+:root[data-theme=light]{--bg:#f4f6f8;--card:#fff;--card2:#f0f2f5;--line:#dfe3e8;--tx:#1a1f24;--mut:#5a6470;
+  --navbg:rgba(255,255,255,.72);--navline:rgba(0,0,0,.08);}
+:root[data-theme=dark]{--bg:#0e1116;--card:#161b22;--card2:#1c232d;--line:#2a323d;--tx:#e6edf3;--mut:#8b949e;
+  --navbg:rgba(24,29,38,.72);--navline:rgba(255,255,255,.12);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 -apple-system,Roboto,system-ui,sans-serif;
+  padding:14px 14px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+.mono{overflow-wrap:anywhere}
+.card{max-width:100%}
+h1{font-size:19px;margin:0;letter-spacing:.2px}
+.sub{color:var(--mut);font-size:12px;margin-top:2px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:21px;flex:none}
+.themebtn{margin-left:auto;flex:none;width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--card2);font-size:19px;cursor:pointer;display:grid;place-items:center;transition:.15s;line-height:1}
+.themebtn:active{transform:scale(.92)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:0 0 12px;font-weight:600}
+.hero{background:linear-gradient(135deg,#20130a,#161b22);border-color:#3a2a1a}
+@media (prefers-color-scheme:light){:root:not([data-theme]) .hero{background:linear-gradient(135deg,#fff4ea,#fff);border-color:#ffd9b8}}
+:root[data-theme=light] .hero{background:linear-gradient(135deg,#fff4ea,#fff);border-color:#ffd9b8}
+:root[data-theme=dark] .hero{background:linear-gradient(135deg,#20130a,#161b22);border-color:#3a2a1a}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--tx);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:.12s;flex:1}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#1a1000}
+.btn.ghost{background:transparent}.btn.sm{padding:8px 10px;font-size:13px;flex:none}
+.btn.danger{color:var(--bad);border-color:#5a2a2a}.big{width:100%;padding:16px;font-size:16px;border-radius:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row+.row{margin-top:8px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.kv:first-child{border-top:none}.kv .k{color:var(--mut)}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.3px}
+.pill.on{background:rgba(63,185,80,.16);color:var(--ok)}.pill.off{background:rgba(139,148,158,.16);color:var(--mut)}
+.pill.mon{background:rgba(255,122,26,.18);color:var(--acc2)}
+.chip{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.chip .nm{font-weight:600;font-size:14px}.chip .dsc{color:var(--mut);font-size:11px}
+.switch{position:relative;width:46px;height:27px;flex:none}.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s;cursor:pointer}
+.slider:before{content:"";position:absolute;width:21px;height:21px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.slider{background:var(--acc)}input:checked+.slider:before{transform:translateX(19px)}
+select,input.txt{background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 10px;font-size:14px;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label.fl{font-size:11px;color:var(--mut);display:block;margin:0 0 4px}
+#log,#saved,#live{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px;font-family:ui-monospace,monospace;font-size:11px;color:var(--tx);white-space:pre-wrap;max-height:240px;overflow:auto;margin-top:4px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:#000d;color:#fff;padding:10px 16px;border-radius:24px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:200;max-width:90%}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.muted{color:var(--mut);font-size:12px}.hidden{display:none}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spinr .7s linear infinite;vertical-align:-2px;margin-right:7px}
+@keyframes spinr{to{transform:rotate(360deg)}}
+.run{color:var(--acc2);font-size:12px}.dotpulse{animation:dp 1.1s ease-in-out infinite}@keyframes dp{50%{opacity:.35}}
+.btn.busy{opacity:.6;pointer-events:none}
+.gspin{position:fixed;top:10px;right:12px;z-index:250;display:flex;align-items:center;background:var(--navbg);backdrop-filter:blur(12px) saturate(1.6);-webkit-backdrop-filter:blur(12px) saturate(1.6);border:1px solid var(--navline);border-radius:20px;padding:6px 13px 6px 11px;font-size:11px;font-weight:600;color:var(--acc2);box-shadow:0 6px 18px rgba(0,0,0,.4);opacity:0;transform:translateY(-10px);transition:.22s;pointer-events:none}
+.gspin.on{opacity:1;transform:translateY(0)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:0 5px;overflow-wrap:anywhere}
+#helpbody .card{padding:15px 16px}#helpbody ul{margin:2px 0 0;padding-left:19px;font-size:13.5px;line-height:1.6}#helpbody li{margin:5px 0}#helpbody li::marker{color:var(--acc)}
+#helpbody .hh{font-size:15px;font-weight:700}#helpbody .hs{color:var(--mut);font-size:12.5px;margin:2px 0 7px}
+/* custom dropdowns (replace ugly native <select> picker) */
+.csel{position:relative;flex:1;min-width:0}
+.csel-t{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 11px;font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+.csel.open .csel-t{border-color:var(--acc)}
+.csel-t .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-c{color:var(--mut);font-size:10px;transition:.2s;flex:none}.csel.open .csel-c{transform:rotate(180deg);color:var(--acc)}
+.csel-l{position:absolute;z-index:300;left:0;right:0;top:calc(100% + 5px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;box-shadow:0 14px 36px rgba(0,0,0,.5);max-height:280px;overflow:auto}
+.csel-o{padding:10px 11px;border-radius:8px;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.csel-o:active{background:var(--card2)}.csel-o.sel{background:var(--card2);color:var(--acc);font-weight:700}
+.csel-o.sel::after{content:"✓";font-size:12px}
+/* tabs */
+.tab{display:none}.tab.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slideL{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+/* glossy capsule bottom bar */
+.navwrap{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));pointer-events:none;z-index:150}
+.nav{display:flex;gap:2px;background:var(--navbg);
+  backdrop-filter:blur(22px) saturate(1.7);-webkit-backdrop-filter:blur(22px) saturate(1.7);
+  border:1px solid var(--navline);border-radius:30px;padding:6px;pointer-events:auto;
+  box-shadow:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.2)}
+.nav button{border:none;background:transparent;color:var(--mut);cursor:pointer;transition:.28s cubic-bezier(.4,1.3,.5,1);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  width:49px;height:52px;padding:0;border-radius:18px;font-size:9.5px;font-weight:600;white-space:nowrap}
+.nav button .ico{font-size:19px;line-height:1}
+.nav button.on{color:#1a1000;background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 4px 14px rgba(255,122,26,.45),inset 0 1px 0 rgba(255,255,255,.4);transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<script>try{var _t=localStorage.getItem("nhtheme");if(_t)document.documentElement.setAttribute("data-theme",_t);}catch(e){}</script>
+<header>
+  <div class="logo">📡</div>
+  <div><h1>Nethunter Wi-Fi</h1><div class="sub" id="hdrsub">OnePlus 11</div></div>
+  <button class="themebtn" id="themebtn" aria-label="theme">🌙</button>
+</header>
+
+<!-- ================= HOME ================= -->
+<section class="tab active" id="tab-home">
+  <div class="card hero">
+    <h2>Quick start</h2>
+    <div id="detected" style="margin-bottom:10px"></div>
+    <button class="btn pri big" id="startmon">⚡ Start Monitor Mode</button>
+    <div class="muted" style="margin-top:10px">Detects your adapter, loads the matching driver, sets monitor — the whole <span class="mono">airmon-ng start</span> in one tap.</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" id="loadmatch">🔍 Load matching</button>
+      <button class="btn sm" id="stopmon">Stop monitor</button>
+      <button class="btn sm" id="refresh">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Adapter</h2>
+    <div id="adapter"><div class="muted">No external adapter detected. Plug one in via OTG, then Refresh.</div></div>
+  </div>
+  <div class="card">
+    <h2>Drivers</h2>
+    <div id="drivers"></div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn" data-act="load" data-t="all">Load all</button>
+      <button class="btn ghost danger" data-act="unload" data-t="all">Unload all</button>
+      <button class="btn ghost" data-act="reload" data-t="all">Reload</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RADIO ================= -->
+<section class="tab" id="tab-radio">
+  <div class="card">
+    <h2>Radio <span class="muted" id="iwwarn"></span></h2>
+    <div class="grid2">
+      <div><label class="fl">Channel</label><div class="row"><input class="txt" id="chan" inputmode="numeric" placeholder="6"><button class="btn sm" id="setchan">Set</button></div></div>
+      <div><label class="fl">TX power (mBm)</label><div class="row"><input class="txt" id="txp" inputmode="numeric" placeholder="3000"><button class="btn sm" id="settxp">Set</button></div></div>
+    </div>
+    <div style="margin-top:10px"><label class="fl">TX presets</label>
+      <div class="row"><button class="btn sm" data-txp="low">Low</button><button class="btn sm" data-txp="med">Med</button><button class="btn sm" data-txp="max">Max</button><button class="btn sm ghost" id="psoff">🔋 Power-save off</button></div></div>
+    <div style="margin-top:10px"><label class="fl">Regulatory region</label>
+      <div class="row"><select id="reg"><option value="BO">BO — max</option><option value="US">US</option><option value="GB">GB</option><option value="JP">JP</option><option value="DE">DE</option></select><button class="btn sm" id="setreg">Apply</button></div></div>
+    <div style="margin-top:10px"><label class="fl">Channel hopping</label>
+      <div class="row"><input class="txt" id="hopch" placeholder="1,6,11" value="1,6,11"><button class="btn sm" id="hopstart">Hop</button><button class="btn sm ghost" id="hopstop">Stop</button></div></div>
+  </div>
+  <div class="card">
+    <h2>MAC address</h2>
+    <div class="kv"><span class="k">Current</span><span class="mono" id="curmac">—</span></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="macrand">🎲 Randomize</button><input class="txt" id="macin" placeholder="02:11:22:33:44:55" style="flex:2"><button class="btn sm" id="macset">Set</button></div>
+  </div>
+  <div class="card">
+    <h2>Scan networks</h2>
+    <div class="row"><button class="btn" id="scanbtn">📶 Scan for APs</button></div>
+    <div id="scan" class="hidden" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ================= ATTACK ================= -->
+<section class="tab" id="tab-attack">
+  <div class="card">
+    <h2>Attack <span class="muted">· needs monitor</span></h2>
+    <label class="fl">Target BSSID (tap a Scan result)</label>
+    <div class="row"><input class="txt mono" id="bssid" placeholder="AA:BB:CC:DD:EE:FF"><input class="txt mono" id="dch" style="max-width:110px" placeholder="channel"><button class="btn sm danger" id="deauth">Deauth</button><button class="btn sm ghost" id="deauthstop">Stop</button></div>
+    <div style="margin-top:10px"><label class="fl">Capture handshake → .pcap</label>
+      <div class="row"><input class="txt" id="capch" placeholder="channel (opt)"><button class="btn sm" id="capstart">● Capture</button><button class="btn sm ghost" id="capstop">Stop</button></div></div>
+    <div style="margin-top:10px"><label class="fl">Clientless PMKID (no deauth) — uses the Target BSSID above</label>
+      <div class="row"><button class="btn sm" id="pmkidstart">📡 PMKID capture</button><button class="btn sm ghost" id="pmkidstop">Stop</button></div></div>
+    <div id="caps" class="muted mono" style="margin-top:8px;font-size:11px"></div>
+    <div class="muted" style="margin-top:6px">Pull from <span class="mono">/data/adb/nethunter-captures/</span> → crack on PC:<br><span class="mono">hcxpcapngtool cap -o h; hashcat -m 22000 h wordlist</span></div>
+  </div>
+  <div class="card">
+    <h2>Live signal</h2>
+    <div class="row"><button class="btn" id="livebtn">📈 Start live monitor</button><button class="btn sm ghost" id="livestop">Stop</button></div>
+    <div id="live" class="hidden" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ================= KEYS ================= -->
+<section class="tab" id="tab-keys">
+  <div class="card">
+    <h2>Saved Wi-Fi passwords</h2>
+    <div class="muted" style="margin-bottom:8px">Networks this phone has saved (your own).</div>
+    <div class="row"><button class="btn" id="savedpwbtn">🔑 Reveal saved passwords</button></div>
+    <div id="saved" class="hidden" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <h2>Crack a handshake <span id="chrootst" class="pill" style="float:right">…</span></h2>
+    <div class="muted" style="margin-bottom:8px">Runs the <b>bundled</b> aircrack-ng (no chroot) on captures from the Attack tab. Wordlist: the Kali chroot's rockyou (auto) or your own path. CPU-only on-device.</div>
+    <label class="fl">Capture</label>
+    <div class="row"><select id="capsel" style="flex:1"></select><button class="btn sm ghost" id="capref">↻</button></div>
+    <label class="fl" style="margin-top:8px">Wordlist (blank = chroot's rockyou)</label>
+    <input class="txt mono" id="wl" value="" placeholder="auto — or /sdcard/Download/rockyou.txt">
+    <div class="row" style="margin-top:10px"><button class="btn" id="crackbtn">🔓 Crack</button></div>
+    <div id="crackout" class="hidden" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- ================= CAMERA ================= -->
+<section class="tab" id="tab-cam">
+  <div class="card">
+    <h2>USB camera <span id="camst" class="pill" style="float:right">…</span></h2>
+    <div class="muted" style="margin-bottom:8px">Plug a UVC webcam into the OTG hub. Kernel video class is built in — no driver to load.</div>
+    <label class="fl">Device</label>
+    <div class="row"><select id="camsel" style="flex:1"></select><button class="btn sm ghost" id="camref">↻</button></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="camsnap">📸 Snapshot</button>
+      <button class="btn ghost" id="camlive">▶ Live</button>
+      <button class="btn ghost" id="camlivestop" style="display:none">⏸ Stop</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sm ghost" id="camsave">💾 Save</button>
+      <button class="btn sm ghost" id="camrec">⏺ Rec 5s</button>
+      <button class="btn sm ghost" id="caminfobtn">ℹ️ Formats</button>
+    </div>
+    <div id="camframe" class="hidden" style="margin-top:10px;text-align:center"></div>
+    <div id="caminfobox" class="hidden mono" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <h2>Network cameras (CCTV / DVR)</h2>
+    <div class="muted" style="margin-bottom:8px">Your own cameras. Discovery scans the network this phone is on — connect to your home Wi-Fi first.</div>
+    <label class="fl">Subnet (blank = auto)</label>
+    <div class="row"><input class="txt mono" id="cctvcidr" placeholder="auto (e.g. 192.168.1.0/24)"><button class="btn sm" id="cctvscanbtn">🔍 Scan</button><button class="btn sm ghost" id="cctvonvifbtn">📷 ONVIF</button></div>
+    <div id="cctvfound" class="hidden" style="margin-top:8px"></div>
+    <div id="credout" class="hidden mono" style="margin-top:8px;font-size:11px"></div>
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
+      <label class="fl">Sniff logins off the wire (MITM — your own LAN)</label>
+      <div class="row"><input class="txt mono" id="snifip" placeholder="camera IP"><button class="btn sm danger" id="sniffbtn">🎣 Sniff 60s</button><button class="btn sm ghost" id="sniffstopbtn">■</button></div>
+      <div class="muted" style="font-size:11px;margin-top:4px">ARP-spoofs the camera↔router so its traffic passes through the phone, then reads the login from RTSP/HTTP <b>Basic</b> auth. Open the camera in your NVR/app while it runs. Digest auth isn't reversible.</div>
+      <div id="sniffout" class="hidden mono" style="margin-top:6px;font-size:11px"></div>
+    </div>
+    <label class="fl" style="margin-top:12px">RTSP URL</label>
+    <input class="txt mono" id="rtspurl" placeholder="rtsp://admin:pass@192.168.1.10:554/Streaming/Channels/101">
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="rtspsnap">📸 Snapshot</button>
+      <button class="btn ghost" id="rtspopen">▶ Live (player)</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input class="txt" id="recsec" value="30" style="max-width:84px" inputmode="numeric">
+      <button class="btn" id="cctvrecbtn">⏺ Record</button>
+      <button class="btn ghost" id="cctvrecstopbtn">■ Stop</button>
+    </div>
+    <div id="cctvrecs" class="muted mono" style="margin-top:6px;font-size:11px"></div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+      <label class="fl">Playback from the DVR's hard disk</label>
+      <div class="row"><input class="txt mono" id="pbhost" placeholder="host or DDNS[:port]" style="flex:1"><button class="btn sm ghost" id="pbdetect">🔎 brand</button></div>
+      <div class="row" style="margin-top:6px">
+        <select id="pbbrand" style="flex:1"><option value="hik">Hikvision</option><option value="dahua">Dahua</option><option value="onvif">ONVIF / generic</option></select>
+        <input class="txt" id="pbch" value="1" style="max-width:60px" inputmode="numeric">
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input class="txt" id="pbuser" placeholder="user" style="flex:1" autocapitalize="off"><input class="txt" id="pbpass" placeholder="pass" type="password" style="flex:1">
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input class="txt" id="pbstart" type="datetime-local" style="flex:1"><input class="txt" id="pbdur" value="10" style="max-width:64px" inputmode="numeric" title="minutes">
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="pbbuild">🧩 Build playback URL</button></div>
+      <div class="muted" style="margin-top:6px;font-size:11px">Builds a time-range URL into the RTSP box above → then Snapshot / Record / Live pulls that span off the HDD. Channel = camera number; duration in minutes.</div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <input class="txt" id="camname" placeholder="save as… (e.g. FrontDoor)" style="flex:1">
+      <button class="btn sm ghost" id="cctvsavebtn">💾 Save</button>
+    </div>
+    <div id="cctvsaved" style="margin-top:8px"></div>
+    <div id="rtspframe" class="hidden" style="margin-top:8px;text-align:center"></div>
+    <div class="muted" style="margin-top:10px;font-size:11px;line-height:1.6">
+      <b>From far (away from home):</b> use your DVR's DDNS host + forwarded RTSP port in the URL
+      (<span class="mono">rtsp://user:pass@myhome.ddns.net:554/…</span>), or run a VPN back home
+      (WireGuard/Tailscale) and use the LAN IP. Snapshot is built-in (bundled ffmpeg, no chroot); Live hands the URL to VLC/MX Player.
+    </div>
+  </div>
+</section>
+
+<!-- ================= TOOLS ================= -->
+<section class="tab" id="tab-tools">
+  <div class="card">
+    <h2>Firmware</h2>
+    <div class="row"><button class="btn sm" id="fwbtn">🔎 Check adapter firmware</button></div>
+    <div id="fw" class="hidden" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <h2>Settings</h2>
+    <div class="chip"><div><div class="nm">Auto-load at boot</div><div class="dsc">Off keeps drivers out of lsmod until you tap Start</div></div>
+      <label class="switch"><input type="checkbox" id="autoload"><span class="slider"></span></label></div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="saveprofile">💾 Save as default</button><button class="btn ghost" id="saveaprofile">📌 Save for THIS adapter</button></div>
+    <div class="muted" style="margin-top:6px">Region/power/TX applied when you start monitor. Per-adapter presets win over the default.</div>
+  </div>
+  <div class="card">
+    <h2>Diagnostics</h2>
+    <div class="row"><button class="btn sm" id="diagbtn">🩺 Full diagnostics</button><button class="btn sm ghost" id="dmesgbtn">Wi-Fi dmesg</button></div>
+    <div id="log" class="hidden"></div>
+  </div>
+</section>
+
+<!-- ================= HELP ================= -->
+<section class="tab" id="tab-help">
+  <div class="card">
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <div style="font-size:15px;font-weight:700">📖 <span id="helphead">User guide</span></div>
+      <select id="helplang" style="max-width:150px;flex:none;width:auto"></select>
+    </div>
+  </div>
+  <div id="helpbody"></div>
+</section>
+
+<div class="toast" id="toast"></div>
+<div class="gspin" id="gspin"><span class="spin"></span>running…</div>
+
+<!-- glossy capsule bottom bar -->
+<nav class="navwrap"><div class="nav" id="nav">
+  <button data-tab="home" class="on"><span class="ico">⚡</span>Home</button>
+  <button data-tab="radio"><span class="ico">📡</span>Radio</button>
+  <button data-tab="attack"><span class="ico">🎯</span>Attack</button>
+  <button data-tab="cam"><span class="ico">🎥</span>Cam</button>
+  <button data-tab="keys"><span class="ico">🔑</span>Keys</button>
+  <button data-tab="tools"><span class="ico">⚙️</span>Tools</button>
+  <button data-tab="help"><span class="ico">📖</span><span id="navhelp">Help</span></button>
+</div></nav>
+
+<script>
+const CTL="sh $(ls -d /data/adb/modules/op*_nethunter_wifi 2>/dev/null | head -1)/wifi-ctl.sh";
+let CBID=0, EXT="", DVP="", LIVE=null;
+// global "running" indicator: shown while any exec() is in flight (delayed to avoid flicker on fast calls)
+let _act=0,_actT=null;
+function _actShow(){if(++_act===1&&!_actT)_actT=setTimeout(()=>{const g=document.getElementById("gspin");if(g&&_act>0)g.classList.add("on");},170);}
+function _actHide(){if(--_act<=0){_act=0;clearTimeout(_actT);_actT=null;const g=document.getElementById("gspin");if(g)g.classList.remove("on");}}
+function exec(args){return new Promise(res=>{try{
+  if(window.ksu&&ksu.exec){_actShow();const cb="__cb"+(CBID++);window[cb]=(e,o,s)=>{delete window[cb];_actHide();res({errno:e,out:(o||"").trim(),err:(s||"").trim()})};ksu.exec(CTL+" "+args,"{}",cb);}
+  else res({errno:1,out:"",err:"Open from your root manager's WebUI."});
+}catch(e){_actHide();res({errno:1,out:"",err:String(e)});}})}
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("show"),2200);}
+const $=s=>document.querySelector(s);
+function spin(el,txt){el.classList.remove("hidden");el.innerHTML=`<span class="spin"></span><span class="run">${txt}</span>`;}
+function busy(btn,on){if(btn)btn.classList.toggle("busy",on);}
+
+// tabs
+const NAVB=[...document.querySelectorAll("#nav button")];
+let _curTab=0,_x0=null,_y0=null,_tmove=0,_tst=null;
+function goTab(idx){
+  if(idx<0||idx>=NAVB.length||idx===_curTab)return;
+  const dir=idx>_curTab?1:-1;_curTab=idx;const b=NAVB[idx],dt=b.dataset.tab;
+  NAVB.forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.id==="tab-"+dt));
+  const at=document.getElementById("tab-"+dt);
+  if(at){at.style.animation="none";void at.offsetWidth;at.style.animation=(dir>0?"slideL":"slideR")+" .26s ease";}
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(dt==="keys")loadKeys();
+  if(dt==="cam"){loadCam();loadCctv();loadRecs();} else stopCamLive();
+}
+NAVB.forEach((b,i)=>b.onclick=()=>{if(_tmove>14){_tmove=0;return;}goTab(i);});
+let _lx=0,_ly=0,_skip=false;
+const _SWX="input,textarea,select,.csel-l,.csel-t,#log,#saved,#live,#camframe,#rtspframe,img";
+function _swipeEnd(){if(_x0==null)return;const dx=_lx-_x0,dy=_ly-_y0,sk=_skip;_x0=null;
+  if(sk)return;if(document.querySelector(".csel.open"))return;
+  if(Math.abs(dx)<45||Math.abs(dx)<Math.abs(dy)*1.35)return;
+  goTab(_curTab+(dx<0?1:-1));}
+document.addEventListener("touchstart",e=>{if(e.touches.length!==1){_x0=null;return;}_tst=e.target;_skip=!!(_tst&&_tst.closest&&_tst.closest(_SWX));_x0=_lx=e.touches[0].clientX;_y0=_ly=e.touches[0].clientY;_tmove=0;},{passive:true});
+document.addEventListener("touchmove",e=>{if(_x0==null)return;_lx=e.touches[0].clientX;_ly=e.touches[0].clientY;const ax=Math.abs(_lx-_x0),ay=Math.abs(_ly-_y0);_tmove=Math.max(_tmove,ax);
+  if(!_skip&&ax>15&&ax>ay*1.25&&e.cancelable)e.preventDefault();},{passive:false});
+document.addEventListener("touchend",_swipeEnd,{passive:true});
+document.addEventListener("touchcancel",_swipeEnd,{passive:true});
+
+async function refresh(){
+  const r=await exec("status"); let s;
+  try{s=JSON.parse(r.out);}catch(e){toast(r.err||"status failed");return;}
+  EXT=s.ext||"";
+  const names={"8812au":"RTL8812AU/8821AU","8821au":"RTL8811/8821AU","88x2bu":"RTL8812BU/8822BU","ath9k_htc":"Atheros AR9271","carl9170":"Atheros AR9170","mt7601u":"MediaTek MT7601U","mt7921u":"MediaTek MT7921","mt76x2u":"MediaTek MT7612U","rt2800usb":"Ralink RT2800","rtw88_8822bu":"Realtek 8822BU","rtw88_8821cu":"Realtek 8821CU","rtw88_8723du":"Realtek 8723DU"};
+  $("#drivers").innerHTML=s.drivers.map(d=>`<div class="chip"><div><div class="nm">${d.name}.ko</div><div class="dsc">${names[d.name]||"driver"}</div></div><span class="pill ${d.loaded?'on':'off'}">${d.loaded?'LOADED':'off'}</span></div>`).join("");
+  const det=s.detected||[]; DVP=det.length?det[0].vp:"";
+  $("#detected").innerHTML=det.length
+    ? det.map(d=>{const ld=s.drivers.find(x=>x.name===d.driver&&x.loaded);return `<div class="chip"><div><div class="nm">${d.name}</div><div class="dsc mono">${d.vp} → ${d.driver}</div></div><span class="pill ${ld?'on':'mon'}">${ld?'loaded':'detected'}</span></div>`;}).join("")
+    : '<div class="muted">No known USB adapter detected — plug one in, then Refresh.</div>';
+  const ext=s.ifaces.find(i=>i.name===EXT);
+  if(ext){const mon=(ext.mode||"").includes("monitor");
+    $("#adapter").innerHTML=`<div class="kv"><span class="k">Interface</span><span class="mono">${ext.name} <span class="pill ${mon?'mon':'off'}">${ext.mode||'—'}</span></span></div>
+      <div class="kv"><span class="k">Driver</span><span class="mono">${ext.driver}</span></div>
+      <div class="kv"><span class="k">USB</span><span class="mono">${ext.usb||'—'}</span></div>
+      <div class="kv"><span class="k">State</span><span class="pill ${ext.up?'on':'off'}">${ext.up?'up':'down'}</span></div>
+      <div class="kv"><span class="k">MAC</span><span class="mono">${ext.mac||'—'}</span></div>`;
+    $("#curmac").textContent=ext.mac||"—";
+  }else{$("#adapter").innerHTML='<div class="muted">No external adapter detected. Plug one in via OTG, then Refresh.</div>';$("#curmac").textContent="—";}
+  $("#iwwarn").textContent=s.iw?"":"· iw missing";
+  $("#autoload").checked=!!s.autoload;
+  $("#hdrsub").textContent=`OnePlus 11 · ${s.drivers.filter(d=>d.loaded).length}/${s.drivers.length} loaded`;
+}
+async function run(a,m){toast(m||"working…");const r=await exec(a);if(r.errno&&r.err)toast(r.err);else if(r.out)toast(r.out.split("\n")[0]);await refresh();}
+async function refreshCaps(){const r=await exec("captures");const c=(r.out||"").split("\n").map(x=>x.trim()).filter(x=>x&&x!=='(none)');$("#caps").textContent=c.length?("captures: "+c.join(", ")):"";}
+function pickBssid(b){if(b){$("#bssid").value=b;toast('target '+b);document.querySelector('#nav button[data-tab=attack]').click();}}
+
+document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>run(`${b.dataset.act} ${b.dataset.t}`,b.textContent));
+$("#startmon").onclick=()=>run("startmon","Starting monitor…");
+$("#loadmatch").onclick=()=>run("loadmatch","Loading matching driver…");
+$("#stopmon").onclick=()=>run("stopmon","Stopping…");
+$("#refresh").onclick=refresh;
+document.querySelectorAll("[data-txp]").forEach(b=>b.onclick=()=>{if(EXT)run(`txpreset ${EXT} ${b.dataset.txp}`,`TX ${b.dataset.txp}`);});
+$("#hopstart").onclick=()=>{const c=$("#hopch").value.trim()||"1,6,11";if(EXT)run(`hop ${EXT} ${c}`,"Hopping…");};
+$("#hopstop").onclick=()=>run("hopstop","Hop stopped");
+$("#setchan").onclick=()=>{const c=$("#chan").value.trim();if(c&&EXT)run(`channel ${EXT} ${c}`);};
+$("#settxp").onclick=()=>{const t=$("#txp").value.trim();if(t&&EXT)run(`txpower ${EXT} ${t}`);};
+$("#setreg").onclick=()=>run(`region ${$("#reg").value}`);
+$("#psoff").onclick=()=>{if(EXT)run(`powersave ${EXT} off`,"Power-save off");};
+$("#macrand").onclick=()=>{if(EXT)run(`mac ${EXT} random`,"Randomizing MAC…");};
+$("#macset").onclick=()=>{const m=$("#macin").value.trim();if(m&&EXT)run(`mac ${EXT} ${m}`);};
+$("#scanbtn").onclick=async()=>{const box=$("#scan");box.classList.remove("hidden");if(!EXT){box.innerHTML='<div class="muted">no adapter</div>';return;}
+  box.innerHTML='<div class="muted">scanning… (managed mode; a few seconds)</div>';
+  const r=await exec(`scan ${EXT}`);const lines=(r.out||"").split("\n").map(x=>x.trim()).filter(Boolean);
+  box.innerHTML=lines.length?lines.map(l=>{const bs=(l.match(/([0-9a-f]{2}:){5}[0-9a-f]{2}/i)||[''])[0];return `<div class="chip" style="cursor:pointer" onclick="pickBssid('${bs}')"><div class="nm mono" style="font-size:12px;font-weight:500">${l.replace(/</g,'&lt;')}</div></div>`;}).join(""):'<div class="muted">no APs (switch to managed to scan)</div>';};
+$("#deauth").onclick=()=>{const b=$("#bssid").value.trim();if(!b){toast("pick a BSSID");return;}const c=$("#dch").value.trim();if(EXT)run(`deauth ${EXT} ${b} ${c}`,"Deauthing…");};
+$("#deauthstop").onclick=()=>run("deauthstop","Deauth stopped");
+$("#capstart").onclick=async()=>{if(!EXT){toast("no adapter");return;}await run(`capture ${EXT} ${$("#capch").value.trim()}`,"Capturing…");refreshCaps();};
+$("#capstop").onclick=async()=>{await run("capturestop","Capture stopped");refreshCaps();};
+$("#pmkidstart").onclick=async()=>{if(!EXT){toast("no adapter");return;}const b=$("#bssid").value.trim();if(!b){toast("pick a target BSSID first — untargeted PMKID hits every AP in range");return;}await run(`pmkid ${EXT} ${b}`,"PMKID capture…");refreshCaps();};
+$("#pmkidstop").onclick=async()=>{await run("pmkidstop","PMKID stopped");refreshCaps();};
+$("#livebtn").onclick=()=>{const box=$("#live");box.classList.remove("hidden");if(LIVE)clearInterval(LIVE);
+  const tick=async()=>{const r=await exec(`link ${EXT}`);box.textContent=r.out||"(no link/stations)";};tick();LIVE=setInterval(tick,2000);toast("live on");};
+$("#livestop").onclick=()=>{if(LIVE){clearInterval(LIVE);LIVE=null;}toast("live off");};
+$("#savedpwbtn").onclick=async()=>{const b=$("#saved");b.classList.remove("hidden");b.textContent="reading…";const r=await exec("savedpw");b.textContent=r.out||"(none)";};
+async function loadKeys(){
+  const st=($("#chrootst"));const c=(await exec("crackstatus")).out;
+  const map={ready:['on','ready'],nowordlist:['off','no wordlist'],nobin:['off','no aircrack']};
+  const m=map[c]||map.none;st.className="pill "+m[0];st.textContent=m[1];st.style.float="right";
+  const caps=((await exec("captures")).out||"").split("\n").map(x=>x.trim()).filter(x=>x&&x!=='(none)');
+  $("#capsel").innerHTML=caps.length?caps.map(f=>`<option>${f}</option>`).join(""):'<option value="">(no captures yet — take one in Attack)</option>';
+}
+$("#capref").onclick=loadKeys;
+$("#crackbtn").onclick=async()=>{
+  const cap=$("#capsel").value, wl=$("#wl").value.trim(), o=$("#crackout");
+  o.classList.remove("hidden");o.className="mono";o.style.marginTop="8px";
+  if(!cap){o.textContent="No capture yet — grab a handshake in the Attack tab (Capture or PMKID capture), then hit ↻ here and it'll appear in the list.";return;}
+  o.textContent="cracking… CPU-only, this can take a while — leave the tab open.";
+  const r=await exec(`crack ${cap} ${wl}`);o.textContent=(r.out||r.err||"(no output)");
+};
+// ---- Camera (USB / UVC) ----
+let CAMLIVE=null;
+async function loadCam(){
+  const st=$("#camst"),r=await exec("camlist"),out=(r.out||"").trim();
+  const devs=out.split("\n").map(l=>l.trim()).filter(l=>l.indexOf("/dev/video")===0);
+  if(devs.length){st.className="pill on";st.textContent=devs.length+(devs.length>1?" cams":" cam");}
+  else{st.className="pill off";st.textContent="no camera";}
+  st.style.float="right";
+  $("#camsel").innerHTML=devs.length?devs.map(l=>{const p=l.split("\t");return `<option value="${p[0]}">${p[0]} — ${(p[1]||'cam').trim()}</option>`;}).join(""):'<option value="">(plug a USB webcam via OTG)</option>';
+}
+function camDev(){return $("#camsel").value;}
+async function showSnap(res){
+  const d=camDev();if(!d){toast("no camera");return false;}
+  const r=await exec(`camsnap ${d}${res?' '+res:''}`),o=(r.out||"").trim();
+  if(o.startsWith("ERR:")){toast(o.slice(4));return false;}
+  if(!o){toast("no frame");return false;}
+  const box=$("#camframe");box.classList.remove("hidden");
+  box.innerHTML=`<img src="data:image/jpeg;base64,${o}" style="max-width:100%;border-radius:12px">`;return true;
+}
+function stopCamLive(){if(CAMLIVE){clearInterval(CAMLIVE);CAMLIVE=null;}$("#camlive").style.display="";$("#camlivestop").style.display="none";}
+$("#camref").onclick=loadCam;
+$("#camsnap").onclick=()=>{toast("capturing…");showSnap();};
+$("#camlive").onclick=()=>{if(!camDev()){toast("no camera");return;}$("#camlive").style.display="none";$("#camlivestop").style.display="";const tick=()=>showSnap("640 480");tick();CAMLIVE=setInterval(tick,1200);toast("live");};
+$("#camlivestop").onclick=stopCamLive;
+$("#camsave").onclick=async()=>{if(!camDev()){toast("no camera");return;}toast("saving…");const r=await exec(`camsave ${camDev()}`);toast((r.out||"saved").split("\n")[0]);};
+$("#camrec").onclick=async()=>{if(!camDev()){toast("no camera");return;}toast("recording 5s…");const r=await exec(`camrec ${camDev()} 5`);toast((r.out||"done").split("\n")[0]);};
+$("#caminfobtn").onclick=async()=>{if(!camDev()){toast("no camera");return;}const box=$("#caminfobox");box.classList.remove("hidden");box.textContent="…";const r=await exec(`caminfo ${camDev()}`);box.textContent=r.out||"(none)";};
+// ---- Network cameras (CCTV/DVR) ----
+async function loadCctv(){
+  const r=await exec("cctvlist"),box=$("#cctvsaved");
+  const rows=(r.out||"").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>l.split("\t"));
+  box.innerHTML=rows.length?rows.map(c=>`<div class="chip"><div style="cursor:pointer;flex:1" onclick="loadRtsp('${encodeURIComponent(c[1]||'')}')"><div class="nm">${c[0]}</div><div class="dsc mono" style="font-size:11px">${(c[1]||'').replace(/\/\/[^@/]*@/,'//***@')}</div></div><button class="btn sm ghost" onclick="delCam('${c[0]}')">🗑</button></div>`).join(""):'<div class="muted" style="font-size:11px">no saved cameras yet</div>';
+}
+function loadRtsp(u){$("#rtspurl").value=decodeURIComponent(u);toast("loaded");}
+async function delCam(n){await exec(`cctvdel '${n}'`);loadCctv();toast("deleted "+n);}
+function setRtsp(v){$("#rtspurl").value=v;toast("set");}
+$("#cctvonvifbtn").onclick=async()=>{const box=$("#cctvfound");box.classList.remove("hidden");spin(box,'ONVIF discovery (3s)…');
+  const r=await exec("cctvonvif");const lines=(r.out||"").split("\n").map(l=>l.trim()).filter(l=>l.startsWith("CAM\t"));
+  if(!lines.length){box.innerHTML='<div class="muted">'+((r.out||"no ONVIF cameras").split("\n").pop())+'</div>';return;}
+  box.innerHTML=lines.map(l=>{const p=l.split("\t"),ip=p[1],name=p[3]||'',hw=p[4]||'';
+    return `<div class="chip" style="cursor:pointer" onclick="$('#snifip').value='${ip}';findPaths('${ip}','554')"><div style="flex:1"><div class="nm mono">${ip}</div><div class="dsc" style="font-size:11px">${name!=='-'?name:''} ${hw!=='-'?hw:''}</div></div><span class="pill on">ONVIF</span></div>`;}).join("");
+};
+async function tryCreds(ip){const box=$("#credout");spin(box,'testing logins on '+ip+'… (Basic+Digest)');$("#snifip").value=ip;
+  const r=await exec(`cctvcreds ${ip}`);const found=(r.out||"").split("\n").filter(l=>l.startsWith("FOUND")||l.startsWith("OPEN"));
+  if(found.length){box.textContent=found.join("\n");const m=(r.out||"").match(/rtsp:\/\/\S+/);if(m)setRtsp(m[0]);}
+  else box.textContent=(r.out||"no output").split("\n").filter(l=>l&&!l.startsWith("#testing")).join("\n")||"no weak login found";
+}
+$("#sniffbtn").onclick=async()=>{let ip=$("#snifip").value.trim();
+  if(!ip){const m=($("#rtspurl").value||"").match(/@?(\d{1,3}(?:\.\d{1,3}){3})/);if(m){ip=m[1];$("#snifip").value=ip;}}
+  if(!ip){toast("no camera IP — get it from 📷 ONVIF / 🔍 Scan, or your router's device list");return;}
+  const o=$("#sniffout");spin(o,"starting MITM on "+ip+"…");
+  const r=await exec(`credsniff ${ip} 60`);
+  spin(o,"MITM active — open the camera in your NVR/app so it logs in…");
+  let n=0;const poll=setInterval(async()=>{n++;const rr=await exec("credsniffresult");const out=(rr.out||"").trim();
+    if(out&&!out.startsWith("(nothing")&&!out.startsWith("(no capture")){clearInterval(poll);o.className="mono";o.textContent="✅ "+out;const m=out.match(/LOGIN \(Basic\): (\S+):(\S+)/);if(m)toast("login: "+m[1]+":"+m[2]);}
+    else if(n>=22){clearInterval(poll);o.className="mono";o.textContent="sniff window ended — no Basic login seen (Digest isn't sniffable; try 🔑 default logins)";}},3000);
+  window._sniffpoll=poll;
+};
+$("#sniffstopbtn").onclick=async()=>{if(window._sniffpoll)clearInterval(window._sniffpoll);const r=await exec("credsniffstop");$("#sniffout").textContent=(r.out||"stopped");};
+$("#cctvscanbtn").onclick=async()=>{const box=$("#cctvfound");box.classList.remove("hidden");spin(box,'scanning your LAN… (~15s)');
+  const r=await exec(`cctvscan ${$("#cctvcidr").value.trim()}`);
+  const lines=(r.out||"").split("\n").map(l=>l.trim()).filter(l=>l.indexOf("\t")>0&&/^\d+\./.test(l));
+  if(!lines.length){box.innerHTML='<div class="muted">no camera-like hosts found on this network</div>';return;}
+  box.innerHTML=lines.map(l=>{const p=l.split("\t"),ip=p[0],port=p[1],tag=p[2]||'',ven=p[3]||'';
+    const rtsp=(port==='554'||port==='8554');
+    const btn=(rtsp?`<button class="btn sm" onclick="findPaths('${ip}','${port}')">paths</button>`:`<button class="btn sm ghost" onclick="findPaths('${ip}','554')">try 554</button>`)+`<button class="btn sm ghost" onclick="tryCreds('${ip}')">🔑</button>`;
+    return `<div class="chip"><div style="flex:1"><div class="nm mono" style="font-size:12px">${ip}:${port} <span class="pill mon">${tag}</span>${ven&&ven!=='-'?' <span class="pill on">'+ven+'</span>':''}</div></div>${btn}</div>`;}).join("");
+};
+async function findPaths(ip,port){const box=$("#cctvfound");box.insertAdjacentHTML('beforeend','<div class="muted" id="ptmp">probing RTSP paths on '+ip+'…</div>');
+  const r=await exec(`cctvpaths ${ip}:${port}`),t=document.getElementById('ptmp');if(t)t.remove();
+  const lines=(r.out||"").split("\n").map(l=>l.trim()).filter(l=>l.startsWith("OPEN")||l.startsWith("AUTH"));
+  if(!lines.length){toast("no RTSP paths answered");return;}
+  box.insertAdjacentHTML('beforeend',lines.map(l=>{const p=l.split("\t"),st=p[0],url=p[1];
+    return `<div class="chip" style="cursor:pointer" onclick="setRtsp('${url}')"><div class="nm mono" style="font-size:11px;flex:1">${url.replace('rtsp://','')}</div><span class="pill ${st==='OPEN'?'on':'mon'}">${st}</span></div>`;}).join(""));
+}
+$("#rtspsnap").onclick=async()=>{const u=$("#rtspurl").value.trim();if(!u){toast("enter an RTSP URL");return;}
+  const box=$("#rtspframe");box.classList.remove("hidden");box.innerHTML='<div class="muted">grabbing frame…</div>';
+  const r=await exec(`cctvsnap '${u}'`),o=(r.out||"").trim();
+  if(o.startsWith("ERR:")){box.innerHTML='<div class="muted">'+o.slice(4)+'</div>';toast(o.slice(4));return;}
+  if(!o){box.innerHTML='<div class="muted">no frame</div>';return;}
+  box.innerHTML=`<img src="data:image/jpeg;base64,${o}" style="max-width:100%;border-radius:12px">`;
+};
+$("#rtspopen").onclick=async()=>{const u=$("#rtspurl").value.trim();if(!u){toast("enter an RTSP URL");return;}const r=await exec(`cctvopen '${u}'`);toast(r.out||"opening…");};
+$("#cctvsavebtn").onclick=async()=>{const n=$("#camname").value.trim(),u=$("#rtspurl").value.trim();if(!n||!u){toast("name + URL needed");return;}await exec(`cctvsave '${n}' '${u}'`);$("#camname").value="";loadCctv();toast("saved "+n);};
+async function loadRecs(){const r=await exec("cctvrecs");const l=(r.out||"").split("\n").map(x=>x.trim()).filter(x=>x&&x!=='(none)');$("#cctvrecs").textContent=l.length?("recordings: "+l.join(", ")):"";}
+$("#cctvrecbtn").onclick=async()=>{const u=$("#rtspurl").value.trim();if(!u){toast("enter an RTSP URL");return;}const s=($("#recsec").value.trim()||"30");const r=await exec(`cctvrec '${u}' ${s}`);toast((r.out||"recording…").split("\n")[0]);setTimeout(loadRecs,1000);};
+$("#cctvrecstopbtn").onclick=async()=>{const r=await exec("cctvrecstop");toast((r.out||"stopped").split("\n")[0]);setTimeout(loadRecs,600);};
+// ---- Playback builder (read the DVR's HDD via time-range RTSP) ----
+function pbHost(){let h=$("#pbhost").value.trim();if(!h){h=($("#rtspurl").value||"").replace(/^rtsp:\/\/([^@]*@)?/,'').split('/')[0];}return h;}
+$("#pbdetect").onclick=async()=>{const h=pbHost().split(':')[0];if(!h){toast("enter host");return;}toast("detecting brand…");
+  const r=await exec(`cctvbrand ${h}`),b=(r.out||"").trim().toLowerCase();
+  if(b.indexOf('hik')>=0)$("#pbbrand").value='hik';else if(b.indexOf('dahua')>=0)$("#pbbrand").value='dahua';else $("#pbbrand").value='onvif';
+  toast("brand: "+((r.out||'unknown').trim()));};
+$("#pbbuild").onclick=()=>{
+  let host=pbHost();if(!host){toast("enter host[:port]");return;}
+  if(host.indexOf(':')<0)host+=':554';
+  const ch=parseInt($("#pbch").value||'1',10)||1,brand=$("#pbbrand").value;
+  const u=$("#pbuser").value.trim(),p=$("#pbpass").value,auth=u?`${u}:${p}@`:'';
+  const sv=$("#pbstart").value;if(!sv){toast("pick a start date/time");return;}
+  const start=new Date(sv),dur=parseInt($("#pbdur").value||'10',10)||10,end=new Date(start.getTime()+dur*60000);
+  const z=n=>String(n).padStart(2,'0');
+  const utc=d=>`${d.getUTCFullYear()}${z(d.getUTCMonth()+1)}${z(d.getUTCDate())}T${z(d.getUTCHours())}${z(d.getUTCMinutes())}${z(d.getUTCSeconds())}Z`;
+  const loc=d=>`${d.getFullYear()}_${z(d.getMonth()+1)}_${z(d.getDate())}_${z(d.getHours())}_${z(d.getMinutes())}_${z(d.getSeconds())}`;
+  let url;
+  if(brand==='dahua'){url=`rtsp://${auth}${host}/cam/playback?channel=${ch}&subtype=0&starttime=${loc(start)}&endtime=${loc(end)}`;}
+  else{url=`rtsp://${auth}${host}/Streaming/tracks/${ch}01?starttime=${utc(start)}&endtime=${utc(end)}`;
+    if(brand==='onvif')toast("ONVIF has no universal URL — using Hik-style; tweak if needed");}
+  $("#rtspurl").value=url;toast("built ✓ — now Snapshot / Record");
+};
+$("#fwbtn").onclick=async()=>{const box=$("#fw");box.classList.remove("hidden");box.innerHTML='<div class="muted">checking…</div>';
+  const rows=((await exec("fwcheck")).out||"").split("\n").map(x=>x.trim()).filter(Boolean).map(l=>l.split(/\s+/));let miss=false;
+  box.innerHTML=rows.map(c=>{const ok=c[2]&&c[2]!=="MISSING";if(!ok)miss=true;return `<div class="chip"><div><div class="nm">${c[0]}</div><div class="dsc mono">${c[1]}${ok?' · '+c[2]:''}</div></div><span class="pill ${ok?'on':'off'}">${ok?'present':'missing'}</span></div>`;}).join("")
+    +(miss?'<div class="muted" style="margin-top:6px">Missing → reboot once to apply the bundled firmware (loaded via the module). RTL drivers embed their own.</div>':'<div class="muted" style="margin-top:6px">All firmware bundled in the module ✓ — Atheros/MediaTek adapters work out of the box.</div>');};
+$("#autoload").onchange=e=>run(`autoload ${e.target.checked?'on':'off'}`,"Saved");
+$("#saveprofile").onclick=()=>run(`profile save ${$("#reg").value} off ${$("#txp").value.trim()}`,"Profile saved");
+$("#saveaprofile").onclick=()=>{if(!DVP){toast("no adapter");return;}run(`aprofile save ${DVP} ${$("#reg").value} off ${$("#txp").value.trim()}`,"Saved for adapter");};
+$("#diagbtn").onclick=async()=>{const l=$("#log");l.classList.remove("hidden");l.textContent="running…";const r=await exec("diag");l.textContent=r.out||"(nothing)";};
+$("#dmesgbtn").onclick=async()=>{const l=$("#log");l.classList.remove("hidden");l.textContent="…";const r=await exec("dmesg");l.textContent=r.out||"(nothing)";};
+// ---- multilingual Help (auto-detect; default English) ----
+const HELP={
+ en:{name:"English",nav:"Help",head:"User guide",intro:"Wi-Fi & camera toolkit for the OP11: Wi-Fi injection (49 drivers + firmware), network auditing, USB webcam, CCTV/DVR cameras and handshake cracking — all from this WebUI.",s:[
+  {i:"🔌",h:"Before you start",b:["Plug an **injection-capable USB Wi-Fi adapter** into the OTG hub.","Chips (firmware built in): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","A **USB (UVC) webcam** also plugs into OTG — no driver needed.","⚠️ Use only on **your own gear** and authorized networks."]},
+  {i:"⚡",h:"Home",sub:"Detect the adapter, load its driver, go monitor.",b:["**Start Monitor Mode** — one tap: detect + load driver + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Driver list with toggles, plus **Load all** / **Unload all** / **Reload**."]},
+  {i:"📡",h:"Radio",sub:"Card settings and network discovery.",b:["**Scan** nearby networks (tap a result to target it in Attack).","Channel · TX power · region · power-save off · **MAC** spoof · channel **hop**."]},
+  {i:"🎯",h:"Attack",sub:"Needs monitor mode.",b:["**Deauth** a target BSSID · **Capture handshake** (.pcap) · **PMKID** (clientless) · **Live signal**.","Captures go to `captures/` and appear in **Keys** for cracking."]},
+  {i:"🎥",h:"Cam",sub:"USB webcam + network cameras.",b:["**USB webcam:** Snapshot · Live · Save · Rec · Formats.","**Find the camera:** `ONVIF` or `Scan` → `paths`/`try 554` → fills the RTSP URL.","**View:** add `user:pass` → Snapshot · Live (VLC) · Record (mp4).","**Playback** the DVR's hard disk: brand + channel + date/time → Build.","**Find the login:** `🔑` tries default credentials; `🎣 Sniff` (MITM) reads a Basic login while the camera is open in your app.","Digest auth can't be sniffed — use the default-credential test instead."]},
+  {i:"🔑",h:"Keys",sub:"Saved passwords + handshake cracking.",b:["**Reveal saved Wi-Fi passwords** (this phone's own).","**Crack** a captured handshake — built-in **aircrack-ng** (no chroot).","Needs a wordlist: the chroot's `rockyou`, or `/sdcard/Download/rockyou.txt`. Pill turns green when found."]},
+  {i:"⚙️",h:"Tools",sub:"Firmware, settings, diagnostics.",b:["**Firmware** check (already bundled) · **Settings** (auto-load, profiles) · **Diagnostics** & Wi-Fi dmesg."]},
+  {i:"🍳",h:"Quick recipes",b:["**Crack a Wi-Fi (yours):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (or PMKID) → Keys Crack.","**See my camera:** Cam ONVIF → tap it → paths → add `user:pass` → Live.","**Recover a camera login:** Cam `🔑` defaults; if it fails, `🎣 Sniff` while opening the camera in your app."]},
+  {i:"⚠️",h:"Good to know",b:["The **running…** badge (top-right) means an operation is in progress.","The drivers are built against the **stock GKI ABI**, so they load on any compatible OP11 kernel — no need to pair them with one specific build.","Your own gear / authorized networks only."]}]},
+ fr:{name:"Français",nav:"Aide",head:"Mode d'emploi",intro:"Boîte à outils Wi-Fi & caméras pour le OP11 : injection Wi-Fi (49 pilotes + firmware), audit réseau, webcam USB, caméras CCTV/DVR et crackage de handshakes — depuis cette interface.",s:[
+  {i:"🔌",h:"Avant de commencer",b:["Branche un **adaptateur Wi-Fi USB** (injection) sur le hub **OTG**.","Puces (firmware inclus) : **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Une **webcam USB (UVC)** se branche aussi en OTG — aucun pilote.","⚠️ Uniquement sur **ton matériel** et des réseaux autorisés."]},
+  {i:"⚡",h:"Accueil",sub:"Détecte l'adaptateur, charge le pilote, passe en moniteur.",b:["**Start Monitor Mode** — un tap : détection + pilote + moniteur.","**Load matching** · **Stop monitor** · **Refresh**.","Liste des pilotes avec interrupteurs, plus **Load all** / **Unload all** / **Reload**."]},
+  {i:"📡",h:"Radio",sub:"Réglages carte et repérage des réseaux.",b:["**Scan** des réseaux (touche un résultat pour le cibler dans Attaque).","Canal · puissance TX · région · éco d'énergie off · **MAC** · saut de canaux (**hop**)."]},
+  {i:"🎯",h:"Attaque",sub:"Nécessite le mode moniteur.",b:["**Deauth** d'un BSSID · **Capture handshake** (.pcap) · **PMKID** (sans client) · **Signal live**.","Les captures vont dans `captures/` et apparaissent dans **Clés** pour le crackage."]},
+  {i:"🎥",h:"Cam",sub:"Webcam USB + caméras réseau.",b:["**Webcam USB :** Snapshot · Live · Save · Rec · Formats.","**Trouver la caméra :** `ONVIF` ou `Scan` → `paths`/`try 554` → remplit l'URL RTSP.","**Voir :** ajoute `user:pass` → Snapshot · Live (VLC) · Record (mp4).","**Playback** du disque du DVR : marque + canal + date/heure → Build.","**Trouver le login :** `🔑` teste les identifiants par défaut ; `🎣 Sniff` (MITM) lit un login Basic pendant que la caméra est ouverte dans ton appli.","Le Digest n'est pas capturable — utilise le test d'identifiants par défaut."]},
+  {i:"🔑",h:"Clés",sub:"Mots de passe + crackage.",b:["**Révéler les mots de passe Wi-Fi** enregistrés (ce téléphone).","**Crack** d'un handshake — **aircrack-ng intégré** (sans chroot).","Il faut une wordlist : le `rockyou` du chroot, ou `/sdcard/Download/rockyou.txt`. Pastille verte = prêt."]},
+  {i:"⚙️",h:"Outils",sub:"Firmware, réglages, diagnostics.",b:["**Firmware** (déjà inclus) · **Réglages** (auto-load, profils) · **Diagnostics** & dmesg Wi-Fi."]},
+  {i:"🍳",h:"Recettes rapides",b:["**Cracker un Wi-Fi (le tien) :** Accueil Start Monitor → Radio Scan → Attaque Capture+Deauth (ou PMKID) → Clés Crack.","**Voir ma caméra :** Cam ONVIF → touche-la → paths → ajoute `user:pass` → Live.","**Retrouver un login caméra :** Cam `🔑` défauts ; sinon `🎣 Sniff` en ouvrant la caméra dans ton appli."]},
+  {i:"⚠️",h:"Bon à savoir",b:["Le badge **running…** (haut à droite) = opération en cours.","Les pilotes sont compilés pour l'**ABI GKI standard** : ils chargent sur n'importe quel noyau OP11 compatible — pas besoin de les apparier à un build précis.","Ton matériel / réseaux autorisés uniquement."]}]},
+ de:{name:"Deutsch",nav:"Hilfe",head:"Bedienungsanleitung",intro:"WLAN- & Kamera-Toolkit fürs OP11: WLAN-Injection (49 Treiber + Firmware), Netzwerk-Audit, USB-Webcam, CCTV/DVR-Kameras und Handshake-Cracking — alles über diese Oberfläche.",s:[
+  {i:"🔌",h:"Bevor du startest",b:["Steck einen **injektionsfähigen USB-WLAN-Adapter** an den **OTG**-Hub.","Chips (Firmware integriert): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Eine **USB-Webcam (UVC)** geht auch per OTG — ohne Treiber.","⚠️ Nur an **eigener Hardware** und in autorisierten Netzen."]},
+  {i:"⚡",h:"Start",sub:"Adapter erkennen, Treiber laden, Monitor-Modus.",b:["**Start Monitor Mode** — ein Tipp: Erkennen + Treiber + Monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Treiberliste mit Schaltern, plus **Load all** / **Unload all** / **Reload**."]},
+  {i:"📡",h:"Radio",sub:"Karten-Einstellungen und Netzsuche.",b:["**Scan** der Netze (Ergebnis antippen, um es in Attack zu zielen).","Kanal · Sendeleistung · Region · Stromsparen aus · **MAC** · Kanal-**Hop**."]},
+  {i:"🎯",h:"Attack",sub:"Braucht Monitor-Modus.",b:["**Deauth** eines BSSID · **Handshake aufzeichnen** (.pcap) · **PMKID** (clientless) · **Live-Signal**.","Aufnahmen landen in `captures/` und erscheinen in **Keys** zum Cracken."]},
+  {i:"🎥",h:"Cam",sub:"USB-Webcam + Netzwerkkameras.",b:["**USB-Webcam:** Snapshot · Live · Save · Rec · Formats.","**Kamera finden:** `ONVIF` oder `Scan` → `paths`/`try 554` → füllt die RTSP-URL.","**Ansehen:** `user:pass` ergänzen → Snapshot · Live (VLC) · Record (mp4).","**Playback** der DVR-Festplatte: Marke + Kanal + Datum/Uhrzeit → Build.","**Login finden:** `🔑` testet Standard-Zugangsdaten; `🎣 Sniff` (MITM) liest ein Basic-Login, während die Kamera in deiner App offen ist.","Digest ist nicht mitlesbar — nimm dann den Standard-Zugangsdaten-Test."]},
+  {i:"🔑",h:"Keys",sub:"Passwörter + Handshake-Cracking.",b:["**Gespeicherte WLAN-Passwörter zeigen** (dieses Handy).","**Crack** eines Handshakes — integriertes **aircrack-ng** (kein chroot).","Braucht eine Wortliste: das `rockyou` des chroot oder `/sdcard/Download/rockyou.txt`. Punkt wird grün, wenn gefunden."]},
+  {i:"⚙️",h:"Tools",sub:"Firmware, Einstellungen, Diagnose.",b:["**Firmware**-Prüfung (schon dabei) · **Einstellungen** (Auto-Load, Profile) · **Diagnose** & WLAN-dmesg."]},
+  {i:"🍳",h:"Schnelle Rezepte",b:["**WLAN cracken (deins):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (oder PMKID) → Keys Crack.","**Meine Kamera sehen:** Cam ONVIF → antippen → paths → `user:pass` → Live.","**Kamera-Login wiederfinden:** Cam `🔑` Standard; sonst `🎣 Sniff`, während du die Kamera in deiner App öffnest."]},
+  {i:"⚠️",h:"Gut zu wissen",b:["Das **running…**-Abzeichen (oben rechts) = etwas läuft.","Die Treiber sind gegen die **Standard-GKI-ABI** gebaut und laden auf jedem kompatiblen OP11-Kernel — keine Bindung an einen bestimmten Build.","Nur eigene Hardware / autorisierte Netze."]}]},
+ es:{name:"Español",nav:"Ayuda",head:"Manual de uso",intro:"Kit Wi-Fi y cámaras para el OP11: inyección Wi-Fi (49 controladores + firmware), auditoría de red, webcam USB, cámaras CCTV/DVR y crackeo de handshakes — todo desde esta interfaz.",s:[
+  {i:"🔌",h:"Antes de empezar",b:["Conecta un **adaptador Wi-Fi USB** (con inyección) al hub **OTG**.","Chips (firmware incluido): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 y AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Una **webcam USB (UVC)** también va por OTG — sin controlador.","⚠️ Solo en **tu propio equipo** y redes autorizadas."]},
+  {i:"⚡",h:"Inicio",sub:"Detecta el adaptador, carga el controlador, modo monitor.",b:["**Start Monitor Mode** — un toque: detectar + controlador + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Lista de controladores con interruptores, más **Load all** / **Unload all** / **Reload**."]},
+  {i:"📡",h:"Radio",sub:"Ajustes de la tarjeta y descubrimiento de redes.",b:["**Scan** de redes cercanas (toca un resultado para fijarlo en Attack).","Canal · potencia TX · región · ahorro off · **MAC** · salto de canal (**hop**)."]},
+  {i:"🎯",h:"Attack",sub:"Requiere modo monitor.",b:["**Deauth** de un BSSID · **Capturar handshake** (.pcap) · **PMKID** (sin cliente) · **Señal en vivo**.","Las capturas van a `captures/` y aparecen en **Keys** para crackear."]},
+  {i:"🎥",h:"Cam",sub:"Webcam USB + cámaras de red.",b:["**Webcam USB:** Snapshot · Live · Save · Rec · Formats.","**Encontrar la cámara:** `ONVIF` o `Scan` → `paths`/`try 554` → rellena la URL RTSP.","**Ver:** añade `user:pass` → Snapshot · Live (VLC) · Record (mp4).","**Playback** del disco del DVR: marca + canal + fecha/hora → Build.","**Encontrar el login:** `🔑` prueba credenciales por defecto; `🎣 Sniff` (MITM) lee un login Basic mientras la cámara está abierta en tu app.","Digest no se puede esnifar — usa la prueba de credenciales por defecto."]},
+  {i:"🔑",h:"Keys",sub:"Contraseñas + crackeo.",b:["**Revelar contraseñas Wi-Fi guardadas** (de este teléfono).","**Crack** de un handshake — **aircrack-ng integrado** (sin chroot).","Necesita una wordlist: el `rockyou` del chroot o `/sdcard/Download/rockyou.txt`. El indicador se pone verde al encontrarla."]},
+  {i:"⚙️",h:"Tools",sub:"Firmware, ajustes, diagnóstico.",b:["Comprobación de **firmware** (ya incluido) · **Ajustes** (auto-carga, perfiles) · **Diagnóstico** y dmesg Wi-Fi."]},
+  {i:"🍳",h:"Recetas rápidas",b:["**Crackear un Wi-Fi (el tuyo):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (o PMKID) → Keys Crack.","**Ver mi cámara:** Cam ONVIF → tócala → paths → `user:pass` → Live.","**Recuperar un login de cámara:** Cam `🔑` por defecto; si falla, `🎣 Sniff` abriendo la cámara en tu app."]},
+  {i:"⚠️",h:"Bueno saber",b:["El distintivo **running…** (arriba a la derecha) = algo está en marcha.","Los controladores están compilados para la **ABI GKI estándar**: cargan en cualquier kernel OP11 compatible, sin emparejarlos con un build concreto.","Solo tu equipo / redes autorizadas."]}]},
+ it:{name:"Italiano",nav:"Aiuto",head:"Guida",intro:"Kit Wi-Fi e telecamere per l'OP11: iniezione Wi-Fi (49 driver + firmware), audit di rete, webcam USB, telecamere CCTV/DVR e cracking di handshake — tutto da questa interfaccia.",s:[
+  {i:"🔌",h:"Prima di iniziare",b:["Collega un **adattatore Wi-Fi USB** (con iniezione) all'hub **OTG**.","Chip (firmware incluso): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 e AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Una **webcam USB (UVC)** si collega anch'essa in OTG — senza driver.","⚠️ Solo su **hardware tuo** e reti autorizzate."]},
+  {i:"⚡",h:"Home",sub:"Rileva l'adattatore, carica il driver, modo monitor.",b:["**Start Monitor Mode** — un tocco: rileva + driver + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Elenco driver con interruttori, più **Load all** / **Unload all** / **Reload**."]},
+  {i:"📡",h:"Radio",sub:"Impostazioni scheda e scoperta reti.",b:["**Scan** delle reti (tocca un risultato per puntarlo in Attack).","Canale · potenza TX · regione · risparmio off · **MAC** · salto canale (**hop**)."]},
+  {i:"🎯",h:"Attack",sub:"Richiede il modo monitor.",b:["**Deauth** di un BSSID · **Cattura handshake** (.pcap) · **PMKID** (senza client) · **Segnale live**.","Le catture vanno in `captures/` e appaiono in **Keys** per il cracking."]},
+  {i:"🎥",h:"Cam",sub:"Webcam USB + telecamere di rete.",b:["**Webcam USB:** Snapshot · Live · Save · Rec · Formats.","**Trovare la telecamera:** `ONVIF` o `Scan` → `paths`/`try 554` → riempie l'URL RTSP.","**Vedere:** aggiungi `user:pass` → Snapshot · Live (VLC) · Record (mp4).","**Playback** del disco del DVR: marca + canale + data/ora → Build.","**Trovare il login:** `🔑` prova credenziali predefinite; `🎣 Sniff` (MITM) legge un login Basic mentre la telecamera è aperta nella tua app.","Il Digest non è intercettabile — usa il test delle credenziali predefinite."]},
+  {i:"🔑",h:"Keys",sub:"Password + cracking.",b:["**Mostra le password Wi-Fi salvate** (di questo telefono).","**Crack** di un handshake — **aircrack-ng integrato** (senza chroot).","Serve una wordlist: il `rockyou` del chroot o `/sdcard/Download/rockyou.txt`. Il pallino diventa verde quando la trova."]},
+  {i:"⚙️",h:"Tools",sub:"Firmware, impostazioni, diagnostica.",b:["Controllo **firmware** (già incluso) · **Impostazioni** (auto-load, profili) · **Diagnostica** e dmesg Wi-Fi."]},
+  {i:"🍳",h:"Ricette rapide",b:["**Craccare un Wi-Fi (il tuo):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (o PMKID) → Keys Crack.","**Vedere la mia telecamera:** Cam ONVIF → toccala → paths → `user:pass` → Live.","**Recuperare un login telecamera:** Cam `🔑` predefinite; altrimenti `🎣 Sniff` aprendo la telecamera nella tua app."]},
+  {i:"⚠️",h:"Buono a sapersi",b:["Il badge **running…** (in alto a destra) = qualcosa è in corso.","I driver sono compilati per l'**ABI GKI standard**: si caricano su qualsiasi kernel OP11 compatibile, senza abbinarli a un build specifico.","Solo hardware tuo / reti autorizzate."]}]}
+};
+function mkH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>');}
+function renderHelp(code){const d=HELP[code]||HELP.en;
+  $("#navhelp").textContent=d.nav;$("#helphead").textContent=d.head;
+  let h=`<div class="card"><div class="muted" style="font-size:13.5px">${mkH(d.intro)}</div></div>`;
+  d.s.forEach(x=>{h+=`<div class="card"><div class="hh">${x.i} ${x.h}</div>`+(x.sub?`<div class="hs">${mkH(x.sub)}</div>`:"")+"<ul>"+x.b.map(li=>`<li>${mkH(li)}</li>`).join("")+"</ul></div>";});
+  $("#helpbody").innerHTML=h;}
+function autoLang(){const l=(navigator.language||navigator.userLanguage||"en").slice(0,2).toLowerCase();return HELP[l]?l:"en";}
+(function initHelp(){
+  let sel="auto";try{sel=localStorage.getItem("nhlang")||"auto";}catch(e){}
+  $("#helplang").innerHTML='<option value="auto">🌐 Auto</option>'+Object.keys(HELP).map(k=>`<option value="${k}">${HELP[k].name}</option>`).join("");
+  $("#helplang").value=sel;
+  const apply=()=>{const v=$("#helplang").value;renderHelp(v==="auto"?autoLang():v);};
+  $("#helplang").onchange=()=>{try{localStorage.setItem("nhlang",$("#helplang").value);}catch(e){}apply();};
+  apply();
+})();
+// ---- replace native <select> pickers with themed dropdowns ----
+function cselCloseAll(){document.querySelectorAll(".csel.open").forEach(w=>{w.classList.remove("open");w.querySelector(".csel-l").classList.add("hidden");});}
+function enhanceSelects(){
+  document.querySelectorAll("select:not([data-enh])").forEach(sel=>{
+    sel.setAttribute("data-enh","1");
+    const wrap=document.createElement("div");wrap.className="csel";
+    wrap.setAttribute("style",sel.getAttribute("style")||"");wrap.style.position="relative";
+    const trig=document.createElement("button");trig.type="button";trig.className="csel-t";
+    trig.innerHTML='<span class="v"></span><span class="csel-c">▼</span>';
+    const list=document.createElement("div");list.className="csel-l hidden";
+    sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(trig);wrap.appendChild(list);wrap.appendChild(sel);
+    sel.style.display="none";const vlab=trig.querySelector(".v");
+    const sync=()=>{const o=sel.options[sel.selectedIndex];vlab.textContent=o?o.textContent:"";};
+    const build=()=>{list.innerHTML="";[...sel.options].forEach((o,i)=>{const it=document.createElement("div");
+      it.className="csel-o"+(i===sel.selectedIndex?" sel":"");it.innerHTML="<span>"+o.textContent.replace(/</g,"&lt;")+"</span>";
+      it.onclick=ev=>{ev.stopPropagation();sel.selectedIndex=i;sel.dispatchEvent(new Event("change",{bubbles:true}));sync();cselCloseAll();};
+      list.appendChild(it);});};
+    trig.onclick=ev=>{ev.stopPropagation();const wasOpen=wrap.classList.contains("open");cselCloseAll();if(!wasOpen){build();list.classList.remove("hidden");wrap.classList.add("open");}};
+    new MutationObserver(sync).observe(sel,{childList:true});
+    sel.addEventListener("change",sync);sync();
+  });
+}
+document.addEventListener("click",cselCloseAll);
+enhanceSelects();
+// ---- moon/sun theme toggle ----
+function curTheme(){const dt=document.documentElement.getAttribute("data-theme");return dt||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");}
+function setThemeIcon(){$("#themebtn").textContent=curTheme()==="dark"?"🌙":"☀️";}
+$("#themebtn").onclick=()=>{const n=curTheme()==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("nhtheme",n);}catch(e){}setThemeIcon();};
+setThemeIcon();
+// auto-refresh whenever the WebUI is (re)shown, so it can never display stale state
+let _lastRef=0;
+function autoRefresh(){const n=Date.now();if(n-_lastRef<800)return;_lastRef=n;refresh();
+  const t=NAVB[_curTab]&&NAVB[_curTab].dataset.tab;
+  if(t==="keys")loadKeys(); if(t==="cam"){loadCam();loadCctv();loadRecs();}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)autoRefresh();});
+addEventListener("focus",autoRefresh);
+addEventListener("pageshow",autoRefresh);
+refresh();
+</script>
+</body>
+</html>

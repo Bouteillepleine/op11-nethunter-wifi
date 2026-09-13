@@ -1,0 +1,14 @@
+.cap.pid
+.cap.file
+.pmkid.pid
+.pmkid.file
+.deauth.pid
+.hop.pid
+.pmkid.bpf
+.rtsprec.pid
+profile.conf
+aprofiles/
+cams.conf
+auto_load
+update
+wordlist.txt
