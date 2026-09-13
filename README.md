@@ -54,3 +54,25 @@ honours it; forcing a device you control to re-associate is more reliable.
 ## Building the modules
 
 Kernel and modules come from `Bouteillepleine/OnePlus-KsuNext_NMS`, branch `nethunter-op11`.
+
+## CI
+
+`tools/lint.sh` and `tools/check-crcs.py` run on every push.
+
+The CRC gate is the one that matters. It parses the `__versions` table out of
+`mac80211.ko` and compares each cfg80211 symbol against `tools/device_cfg80211.symvers`
+— the export CRCs read straight off the device's own `/vendor_dlkm/lib/modules/cfg80211.ko`.
+Every driver is then checked against the `mac80211.ko` it ships with. Run it by hand with:
+
+    python3 tools/check-crcs.py mac80211.ko tools/device_cfg80211.symvers
+
+This exists because a `mac80211` built with the wrong `NL80211_TESTMODE` passed every
+other check, loaded cleanly, and then panicked the phone the moment a driver registered
+a wiphy. The gate catches that build by name:
+
+    MISMATCH wiphy_new_nm    reference=0x03915fa5 built=0xd25c4ce2
+
+`Sync modules from a kernel build` pulls the 50 `.ko` files from a finished
+`OnePlus-KsuNext_NMS` run, re-runs the gate and opens a PR only if it passes. It needs a
+`KERNEL_REPO_TOKEN` secret — a PAT that can read that repo, since `GITHUB_TOKEN` cannot
+reach across repositories.

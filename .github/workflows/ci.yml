@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint scripts and WebUI wiring
+        run: bash tools/lint.sh
+
+      - name: mac80211 against the device's own cfg80211 CRCs
+        run: python3 tools/check-crcs.py mac80211.ko tools/device_cfg80211.symvers
+
+      - name: Drivers against the mac80211 they ship with
+        run: |
+          rc=0
+          for ko in drivers/*.ko; do
+            python3 tools/check-crcs.py "$ko" mac80211.ko || rc=1
+          done
+          exit $rc
+
+      - name: Firmware the drivers ask for is present
+        run: |
+          rc=0
+          for fw in rtw88/rtw8812a_fw.bin rtw88/rtw8821a_fw.bin htc_9271.fw \
+                    mt7601u.bin rt2870.bin carl9170-1.fw; do
+            [ -f "system/etc/firmware/$fw" ] || { echo "missing firmware: $fw"; rc=1; }
+          done
+          exit $rc
+
+      - name: Build the flashable zip
+        run: bash tools/package.sh module.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: op11-nethunter-wifi
+          path: module.zip
+
+      - name: Release on a tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ver=$(sed -n 's/^version=//p' module.prop)
+          mv module.zip "op11-nethunter-wifi-$ver.zip"
+          gh release create "${GITHUB_REF_NAME}" "op11-nethunter-wifi-$ver.zip" \
+            --title "$ver" --notes "Built from ${GITHUB_SHA}"

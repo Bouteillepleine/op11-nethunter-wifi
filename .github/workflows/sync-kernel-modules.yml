@@ -1,0 +1,91 @@
+name: Sync modules from a kernel build
+
+# The kernel and the 50 .ko files are built by Bouteillepleine/OnePlus-KsuNext_NMS
+# on branch nethunter-op11. This pulls a finished build's AK3 artifact, drops the
+# modules into the tree and refuses to commit anything that fails the CRC gate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Kernel workflow run id (blank = latest successful on nethunter-op11)'
+        required: false
+        default: ''
+      artifact:
+        description: 'Artifact name'
+        required: false
+        default: 'AK3_OP11_A16_android13-5.15.180_KSUN_33275.zip'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      KERNEL_REPO: Bouteillepleine/OnePlus-KsuNext_NMS
+      KERNEL_BRANCH: nethunter-op11
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the cross-repo token is configured
+        env:
+          TOK: ${{ secrets.KERNEL_REPO_TOKEN }}
+        run: |
+          if [ -z "$TOK" ]; then
+            echo "::error::set the KERNEL_REPO_TOKEN secret to a PAT that can read $KERNEL_REPO"
+            exit 1
+          fi
+
+      - name: Fetch the kernel build artifact
+        env:
+          GH_TOKEN: ${{ secrets.KERNEL_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          rid="${{ github.event.inputs.run_id }}"
+          if [ -z "$rid" ]; then
+            rid=$(gh run list -R "$KERNEL_REPO" -b "$KERNEL_BRANCH" \
+                    --status success -L 1 --json databaseId -q '.[0].databaseId')
+            echo "latest successful run: $rid"
+          fi
+          [ -n "$rid" ] || { echo "::error::no successful kernel run found"; exit 1; }
+          echo "KERNEL_RUN=$rid" >> "$GITHUB_ENV"
+          mkdir -p ak3
+          gh run download "$rid" -R "$KERNEL_REPO" -n "${{ github.event.inputs.artifact }}" -D ak3
+          ls ak3/modules | wc -l
+
+      - name: Replace mac80211 and the drivers
+        run: |
+          set -euo pipefail
+          [ -f ak3/modules/mac80211.ko ] || { echo "::error::artifact has no mac80211.ko"; exit 1; }
+          rm -f drivers/*.ko mac80211.ko
+          cp ak3/modules/mac80211.ko mac80211.ko
+          for ko in ak3/modules/*.ko; do
+            [ "$(basename "$ko")" = mac80211.ko ] || cp "$ko" "drivers/$(basename "$ko")"
+          done
+          echo "drivers now: $(ls drivers/*.ko | wc -l)"
+
+      - name: CRC gate
+        run: |
+          set -e
+          python3 tools/check-crcs.py mac80211.ko tools/device_cfg80211.symvers
+          for ko in drivers/*.ko; do python3 tools/check-crcs.py "$ko" mac80211.ko; done
+
+      - name: Bump the module version
+        run: |
+          set -euo pipefail
+          cur=$(sed -n 's/^versionCode=//p' module.prop)
+          new=$((cur + 1))
+          maj=$(sed -n 's/^version=v//p' module.prop)
+          sed -i "s/^versionCode=.*/versionCode=$new/" module.prop
+          sed -i "s/^version=.*/version=v${maj%.*}.$((${maj##*.} + 1))/" module.prop
+          grep -E '^(version|versionCode)=' module.prop
+
+      - uses: peter-evans/create-pull-request@v6
+        with:
+          branch: sync-kernel-${{ env.KERNEL_RUN }}
+          commit-message: "sync drivers from kernel build ${{ env.KERNEL_RUN }}"
+          title: "Sync drivers from kernel build ${{ env.KERNEL_RUN }}"
+          body: |
+            Modules taken from `${{ env.KERNEL_REPO }}` run ${{ env.KERNEL_RUN }}.
+
+            The CRC gate passed: `mac80211.ko` agrees with the device's own cfg80211
+            exports, and every driver agrees with the `mac80211` it ships alongside.
+          author: Bouteillepleine <76688492+Bouteillepleine@users.noreply.github.com>
