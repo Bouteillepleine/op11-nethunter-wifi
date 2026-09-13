@@ -3,8 +3,13 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 rc=0
-for f in action.sh customize.sh post-fs-data.sh service.sh uninstall.sh wifi-ctl.sh tools/*.sh; do
-  sh -n "$f" || { echo "SYNTAX: $f"; rc=1; }
+# The module's own scripts run under Android's sh, so check them with sh.
+for f in action.sh customize.sh post-fs-data.sh service.sh uninstall.sh wifi-ctl.sh; do
+  sh -n "$f" || { echo "SYNTAX(sh): $f"; rc=1; }
+done
+# These are developer scripts and use bash features on purpose.
+for f in tools/*.sh; do
+  bash -n "$f" || { echo "SYNTAX(bash): $f"; rc=1; }
 done
 # A CRLF update-binary or customize.sh makes the module fail to install.
 while IFS= read -r f; do
