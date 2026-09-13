@@ -69,7 +69,12 @@ for r in refs:
 
 print("%s: %d symbol(s) checked, %d mismatched" % (os.path.basename(ko), checked, bad))
 if checked == 0:
-    print("nothing was compared - the reference files do not overlap this module"); sys.exit(1)
+    # Against the device's symvers that means the reference is wrong. Against a
+    # sibling .ko it just means this driver imports nothing from it - ath.ko and
+    # ath9k_hw.ko pull only kernel-core symbols, which is normal.
+    if any(not r.endswith(".ko") for r in refs):
+        print("nothing was compared - the reference does not overlap this module")
+        sys.exit(1)
 if bad:
     print("")
     print("This module will not load on the device, or will call the wrong function")
