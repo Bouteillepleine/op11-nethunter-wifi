@@ -282,6 +282,12 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--c
 <!-- ================= TOOLS ================= -->
 <section class="tab" id="tab-tools">
   <div class="card">
+    <h2>ABI check</h2>
+    <div class="muted" style="margin-bottom:8px">Compares the mac80211 this module ships against the cfg80211 your ROM actually runs. Worth a tap after flashing a different kernel or taking a ROM update &mdash; a mismatch here is a kernel panic, not a failed insmod.</div>
+    <div class="row"><button class="btn sm" id="verifybtn">🧪 Verify against this device</button></div>
+    <div id="verifyout" class="hidden" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
     <h2>Firmware</h2>
     <div class="row"><button class="btn sm" id="fwbtn">🔎 Check adapter firmware</button></div>
     <div id="fw" class="hidden" style="margin-top:8px"></div>
@@ -421,6 +427,7 @@ $("#pmkidstart").onclick=async()=>{if(!EXT){toast("no adapter");return;}const b=
 $("#pmkidstop").onclick=async()=>{await run("pmkidstop","PMKID stopped");refreshCaps();};
 $("#livebtn").onclick=()=>{const box=$("#live");box.classList.remove("hidden");if(LIVE)clearInterval(LIVE);
   const tick=async()=>{const r=await exec(`link ${EXT}`);box.textContent=r.out||"(no link/stations)";};tick();LIVE=setInterval(tick,2000);toast("live on");};
+$("#verifybtn").onclick=async()=>{const o=$("#verifyout");o.classList.remove("hidden");o.textContent="checking…";const r=await exec("verify");o.textContent=(r.out||r.err||"(no output)");};
 $("#livestop").onclick=()=>{if(LIVE){clearInterval(LIVE);LIVE=null;}toast("live off");};
 $("#savedpwbtn").onclick=async()=>{const b=$("#saved");b.classList.remove("hidden");b.textContent="reading…";const r=await exec("savedpw");b.textContent=r.out||"(none)";};
 async function loadKeys(){

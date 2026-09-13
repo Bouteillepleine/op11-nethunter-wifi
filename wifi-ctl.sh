@@ -9,6 +9,7 @@ MDK4="$MODDIR/bin/mdk4"; [ -x "$MDK4" ] || MDK4="$(command -v mdk4 2>/dev/null |
 TCPDUMP="$MODDIR/bin/tcpdump"; [ -x "$TCPDUMP" ] || TCPDUMP="$(command -v tcpdump 2>/dev/null || echo tcpdump)"
 HCX="$MODDIR/bin/hcxdumptool"; [ -x "$HCX" ] || HCX="$(command -v hcxdumptool 2>/dev/null || echo hcxdumptool)"
 HCXT="$MODDIR/bin/hcxpcapngtool"; [ -x "$HCXT" ] || HCXT="$(command -v hcxpcapngtool 2>/dev/null || echo hcxpcapngtool)"
+KOCRC="$MODDIR/bin/kocrc"
 # Outside the module directory on purpose: installing a module replaces that
 # directory wholesale, so captures, camera recordings and sniffed credentials
 # kept inside it were destroyed by every single update.
@@ -335,6 +336,42 @@ case "$1" in
   crackstatus)
     [ -x "$ACK" ] || { echo "nobin"; exit 0; }
     [ -n "$(_rockyou)" ] && echo "ready" || echo "nowordlist" ;;
+  # Does the mac80211 we ship match the cfg80211 THIS device runs? The drivers
+  # resolve against our mac80211, but our mac80211 resolves against the ROM's
+  # cfg80211 - and a single mismatched CRC there is not a failed insmod, it is a
+  # kernel panic the moment a driver registers a wiphy. Worth one check after
+  # flashing a different kernel or taking a ROM update.
+  verify)
+    ko=$2
+    if [ -z "$ko" ]; then
+      for c in /vendor_dlkm/lib/modules/cfg80211.ko /vendor/lib/modules/cfg80211.ko \
+               /system/lib/modules/cfg80211.ko /lib/modules/cfg80211.ko; do
+        [ -f "$c" ] && { ko=$c; break; }
+      done
+    fi
+    [ -f "$ko" ] || { echo "no cfg80211.ko found on this device - pass its path"; exit 0; }
+    [ -x "$KOCRC" ] || { echo "kocrc not bundled in this build"; exit 0; }
+    [ -f "$MODDIR/mac80211.ko" ] || { echo "this module ships no mac80211.ko"; exit 0; }
+    T=/data/local/tmp
+    "$KOCRC" -e "$ko" 2>/dev/null > "$T/.nhdev"
+    "$KOCRC" -i "$MODDIR/mac80211.ko" 2>/dev/null > "$T/.nhours"
+    echo "device : $ko"
+    echo "         $(grep -ao "vermagic=[^ ]*" "$ko" | head -1)"
+    echo "kernel : $(uname -r)"
+    # toybox has no join, so do the whole comparison inside awk
+    awk '
+      NR==FNR { dev[$2]=$1; next }
+      ($2 in dev) {
+        n++
+        if (dev[$2] != $1) { bad++; printf "MISMATCH %-36s device=0x%s ours=0x%s\n", $2, dev[$2], $1 }
+      }
+      END {
+        printf "%d cfg80211 symbol(s) compared, %d mismatched\n", n+0, bad+0
+        if (n+0 == 0) print "nothing compared - is that file really a cfg80211 module?"
+        else if (bad+0) print "FAIL: our mac80211 will not load here, and may panic the kernel"
+        else print "OK: our mac80211 matches this device cfg80211"
+      }' "$T/.nhdev" "$T/.nhours"
+    rm -f "$T/.nhdev" "$T/.nhours" ;;
   # hashcat-ready hashes for the PC route (hashcat -m 22000)
   hashes)
     [ -x "$HCXT" ] || { echo "hcxpcapngtool not bundled in this build"; exit 0; }
@@ -509,5 +546,5 @@ case "$1" in
   autoload) [ "$2" = on ] && touch "$MODDIR/auto_load" || rm -f "$MODDIR/auto_load"; echo "autoload $2" ;;
   dmesg)   dmesg 2>/dev/null | grep -iE "rtl|88[0-9]2|ath9k|mt76|rtw|cfg80211|ieee80211|wlan|usb .*net" | tail -40 ;;
   iwver)   "$IW" --version 2>&1 ;;
-  *) echo "usage: status|detect|loadmatch|find|startmon|stopmon|scan|hop|hopstop|load|unload|reload|monitor|channel|mac|txpower|txpreset|region|powersave|profile|aprofile|usbinfo|link|diag|autoload|dmesg|iwver  attack: deauth|deauthstop|capture|capturestop|captures|pmkid|pmkidstop|hashes|crack|crackstatus|wordlists|savedpw  cam: camlist|caminfo|camsnap|camsave|camrec  cctv: cctvscan|cctvpaths|cctvbrand|cctvonvif|cctvcreds|cctvsnap|cctvrec|cctvsave|cctvlist|cctvdel" ;;
+  *) echo "usage: status|detect|loadmatch|find|startmon|stopmon|scan|hop|hopstop|load|unload|reload|monitor|channel|mac|txpower|txpreset|region|powersave|profile|aprofile|usbinfo|link|verify|diag|autoload|dmesg|iwver  attack: deauth|deauthstop|capture|capturestop|captures|pmkid|pmkidstop|hashes|crack|crackstatus|wordlists|savedpw  cam: camlist|caminfo|camsnap|camsave|camrec  cctv: cctvscan|cctvpaths|cctvbrand|cctvonvif|cctvcreds|cctvsnap|cctvrec|cctvsave|cctvlist|cctvdel" ;;
 esac

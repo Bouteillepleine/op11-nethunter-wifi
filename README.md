@@ -30,9 +30,13 @@ It will **not** work on a kernel that:
 - sets `CONFIG_CFG80211=y` instead of `=m` — a built-in cfg80211 with different CRCs
 - is a different version (6.x, or a SUBLEVEL with ABI changes)
 
-A ROM update can ship a rebuilt `cfg80211.ko`. If OOS updates, re-record
-`tools/device_cfg80211.symvers` from `/vendor_dlkm/lib/modules/cfg80211.ko` and re-run the
-gate below.
+To check any of this on the device itself, after flashing a kernel or taking a ROM update:
+
+    sh wifi-ctl.sh verify            # or Tools -> Verify against this device
+
+It reads the CRCs straight out of the live `/vendor_dlkm/lib/modules/cfg80211.ko` and
+compares them with the shipped `mac80211.ko` — the same check CI runs, against whatever
+ROM is actually installed rather than a recorded snapshot.
 
 ## Two things that are easy to get wrong
 

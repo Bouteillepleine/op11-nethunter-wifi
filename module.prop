@@ -1,6 +1,6 @@
 id=op11_nethunter_wifi
 name=OP11 Nethunter Wi-Fi Injection Drivers
-version=v2.3.2
-versionCode=232
+version=v2.4.0
+versionCode=240
 author=XxxY
 description=OP11 (kalama/sm8550) Nethunter Wi-Fi toolkit for kernel 5.15.180. 49 in-tree Wi-Fi drivers built from the same tree as the kernel, plus our own mac80211 - the device keeps its own cfg80211, so mac80211 is built with the vendor CONFIG_CFG80211_* values (WEXT/DEBUGFS/DEFAULT_PS off, NL80211_TESTMODE on) or every symbol it imports gets a different CRC and it will not load. service.sh swaps mac80211 at boot and loads the driver chain in dependency order. Built with NL80211_TESTMODE exactly as the vendor fragment sets it: it guards two members inside struct cfg80211_ops, so getting it wrong shifts every op after testmode_dump and the stock cfg80211 calls the wrong function pointer at wiphy_register - that panicked the phone in v2.1.0. MONITOR, CAPTURE AND INJECTION WERE VERIFIED on this device (RTL8812AU via rtw88): monitor capture on 2.4 GHz and an mdk4 deauth burst whose frames were read back off the air, with no kernel panic - the OP15 TX panic does not reproduce here. Set NH_BLOCK_TX=1 to refuse transmitting anyway. Firmware is installed to /mnt/vendor/persist, which ueventd searches natively - no mount, and no dependence on the module tree being served. A firmware_class path inside the module directory cannot work, because the kernel domain is not allowed to read anything under /data. Bundled iw+mdk4+tcpdump+hcxdumptool+hcxpcapngtool+aircrack-ng and the WebUI. PMKID capture REQUIRES a target BSSID and pins hcxdumptool's receive path to it with a compiled BPF: unfiltered, hcxdumptool solicits every AP in range and harvests handshakes from networks that are not yours.
