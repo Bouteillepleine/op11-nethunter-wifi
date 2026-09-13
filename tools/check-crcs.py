@@ -26,6 +26,9 @@ def exports(path):
     shent = struct.unpack_from("<H", d, 0x3A)[0]
     shnum = struct.unpack_from("<H", d, 0x3C)[0]
     sec = [struct.unpack_from("<IIQQQQIIQQ", d, shoff + i * shent) for i in range(shnum)]
+    shstr = struct.unpack_from("<H", d, 0x3E)[0]
+    strs = d[sec[shstr][4]:sec[shstr][4] + sec[shstr][5]]
+    names = [strs[x[0]:strs.index(NUL, x[0])].decode() for x in sec]
     out = {}
     for s in sec:
         if s[1] != 2:
@@ -37,7 +40,13 @@ def exports(path):
             nm, info, other, shndx, val, sz = struct.unpack_from("<IBBHQQ", d, o)
             name = sd[nm:sd.index(NUL, nm)].decode()
             if name.startswith("__crc_"):
-                out[name[6:]] = val & 0xFFFFFFFF
+                # CONFIG_MODULE_REL_CRCS (6.x): the symbol is defined in
+                # __kcrctab and st_value is an offset into it, not the CRC.
+                sname = names[shndx] if shndx < len(names) else ""
+                if sname.startswith("__kcrctab") and val + 4 <= sec[shndx][5]:
+                    out[name[6:]] = struct.unpack_from("<I", d, sec[shndx][4] + val)[0]
+                else:
+                    out[name[6:]] = val & 0xFFFFFFFF
     return out
 
 def reference(path):

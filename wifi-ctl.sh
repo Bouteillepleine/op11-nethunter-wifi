@@ -347,36 +347,48 @@ case "$1" in
   # kernel panic the moment a driver registers a wiphy. Worth one check after
   # flashing a different kernel or taking a ROM update.
   verify)
-    ko=$2
-    if [ -z "$ko" ]; then
-      for c in /vendor_dlkm/lib/modules/cfg80211.ko /vendor/lib/modules/cfg80211.ko \
-               /system/lib/modules/cfg80211.ko /lib/modules/cfg80211.ko; do
-        [ -f "$c" ] && { ko=$c; break; }
-      done
-    fi
-    [ -f "$ko" ] || { echo "no cfg80211.ko found on this device - pass its path"; exit 0; }
-    [ -x "$KOCRC" ] || { echo "kocrc not bundled in this build"; exit 0; }
-    [ -f "$MODDIR/mac80211.ko" ] || { echo "this module ships no mac80211.ko"; exit 0; }
     T=/data/local/tmp
-    "$KOCRC" -e "$ko" 2>/dev/null > "$T/.nhdev"
-    "$KOCRC" -i "$MODDIR/mac80211.ko" 2>/dev/null > "$T/.nhours"
-    echo "device : $ko"
-    echo "         $(grep -ao "vermagic=[^ ]*" "$ko" | head -1)"
+    [ -x "$KOCRC" ] || { echo "kocrc not bundled in this build"; exit 0; }
+    # the live stack this device actually runs
+    dcfg=""; dmac=""
+    for d in /vendor_dlkm/lib/modules /vendor/lib/modules /system/lib/modules /lib/modules; do
+      [ -z "$dcfg" ] && [ -f "$d/cfg80211.ko" ] && dcfg="$d/cfg80211.ko"
+      [ -z "$dmac" ] && [ -f "$d/mac80211.ko" ] && dmac="$d/mac80211.ko"
+    done
+    [ -n "$2" ] && dcfg=$2
+    [ -f "$dcfg" ] || { echo "no cfg80211.ko found on this device - pass its path"; exit 0; }
+    : > "$T/.nhref"
+    "$KOCRC" -e "$dcfg" 2>/dev/null >> "$T/.nhref"
+    # If we ship our own mac80211 the device's does not matter: ours replaces it.
+    # If we do not, the drivers have to agree with the one already loaded.
+    if [ -f "$MODDIR/mac80211.ko" ]; then
+      targets="$MODDIR/mac80211.ko"; ref="$dcfg"
+    else
+      [ -f "$dmac" ] && "$KOCRC" -e "$dmac" 2>/dev/null >> "$T/.nhref"
+      targets=$(ls "$DRV"/*.ko 2>/dev/null); ref="$dcfg + $dmac"
+    fi
+    echo "device : $ref"
+    echo "         $(grep -ao "vermagic=[^ ]*" "$dcfg" | head -1)"
     echo "kernel : $(uname -r)"
-    # toybox has no join, so do the whole comparison inside awk
-    awk '
-      NR==FNR { dev[$2]=$1; next }
-      ($2 in dev) {
-        n++
-        if (dev[$2] != $1) { bad++; printf "MISMATCH %-36s device=0x%s ours=0x%s\n", $2, dev[$2], $1 }
-      }
-      END {
-        printf "%d cfg80211 symbol(s) compared, %d mismatched\n", n+0, bad+0
-        if (n+0 == 0) print "nothing compared - is that file really a cfg80211 module?"
-        else if (bad+0) print "FAIL: our mac80211 will not load here, and may panic the kernel"
-        else print "OK: our mac80211 matches this device cfg80211"
-      }' "$T/.nhdev" "$T/.nhours"
-    rm -f "$T/.nhdev" "$T/.nhours" ;;
+    [ -n "$targets" ] || { echo "this module ships no modules to check"; exit 0; }
+    tot=0; bad=0
+    for ko in $targets; do
+      "$KOCRC" -i "$ko" 2>/dev/null > "$T/.nhko"
+      # toybox has no join, so the whole comparison happens inside awk
+      out=$(awk '
+        NR==FNR { dev[$2]=$1; next }
+        ($2 in dev) { n++; if (dev[$2] != $1) { b++; printf "  MISMATCH %-34s device=0x%s ours=0x%s\n", $2, dev[$2], $1 } }
+        END { printf "%d %d\n", n+0, b+0 }' "$T/.nhref" "$T/.nhko")
+      nums=$(echo "$out" | tail -1); msg=$(echo "$out" | sed '$d')
+      [ -n "$msg" ] && { echo "$(basename "$ko"):"; echo "$msg"; }
+      tot=$((tot + $(echo "$nums" | cut -d" " -f1)))
+      bad=$((bad + $(echo "$nums" | cut -d" " -f2)))
+    done
+    echo "$(echo "$targets" | wc -w) module(s), $tot symbol(s) compared, $bad mismatched"
+    if [ "$tot" = 0 ]; then echo "nothing compared - wrong reference, or modules built without MODVERSIONS"
+    elif [ "$bad" != 0 ]; then echo "FAIL: these will not load here, and may panic the kernel"
+    else echo "OK: this module matches the stack on this device"; fi
+    rm -f "$T/.nhref" "$T/.nhko" ;;
   # rockyou is 134 MB and a generic public list, so it is fetched on demand
   # rather than bundled. _rockyou() also accepts a .gz and gunzips it, so a
   # hand-copied rockyou.txt.gz in /sdcard/Download works just as well.

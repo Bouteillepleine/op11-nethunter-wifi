@@ -55,7 +55,20 @@ int main(int argc, char **argv)
 			for (Elf64_Xword k = 0; k < sh[i].sh_size / sizeof(Elf64_Sym); k++) {
 				const char *nm = str + sym[k].st_name;
 				if (strncmp(nm, "__crc_", 6)) continue;
-				printf("%08x %s\n", (unsigned int)sym[k].st_value, nm + 6);
+				unsigned int crc;
+				Elf64_Section ndx = sym[k].st_shndx;
+				// CONFIG_MODULE_REL_CRCS (6.x): __crc_<sym> is defined in
+				// __kcrctab and st_value is an offset into it, not the CRC.
+				// Without this the values read out as 4, 0x70, 0xd4 ... and
+				// every comparison 'fails'. Older builds keep the CRC in
+				// st_value itself (SHN_ABS).
+				if (ndx < eh->e_shnum &&
+				    !strncmp(shstr + sh[ndx].sh_name, "__kcrctab", 9) &&
+				    sym[k].st_value + 4 <= sh[ndx].sh_size)
+					crc = *(unsigned int *)(d + sh[ndx].sh_offset + sym[k].st_value);
+				else
+					crc = (unsigned int)sym[k].st_value;
+				printf("%08x %s\n", crc, nm + 6);
 				found = 1;
 			}
 		}
