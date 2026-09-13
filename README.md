@@ -1,8 +1,13 @@
 # OP11 NetHunter Wi-Fi
 
 Wi-Fi injection toolkit for the OnePlus 11 as a KernelSU/Magisk module: 49 drivers,
-firmware, a bundled userland and a WebUI. Use it on networks you own or are authorised
-to test.
+firmware, a bundled userland and a WebUI.
+
+**Use it on networks you own or have written permission to test.** It transmits:
+deauthentication frames and PMKID solicitation are not passive, and in most places
+pointing them at someone else's network is a criminal offence.
+
+Bundled binaries and firmware are third-party — see [THIRD-PARTY.md](THIRD-PARTY.md). Several are GPL-licensed; corresponding source is linked there.
 
 ## Compatibility
 
