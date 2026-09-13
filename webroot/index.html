@@ -199,7 +199,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--c
     <div class="row"><select id="capsel" style="flex:1"></select><button class="btn sm ghost" id="capref">↻</button></div>
     <label class="fl" style="margin-top:8px">Wordlist (blank = chroot's rockyou)</label>
     <input class="txt mono" id="wl" value="" placeholder="auto — or /sdcard/Download/rockyou.txt">
-    <div class="row" style="margin-top:10px"><button class="btn" id="crackbtn">🔓 Crack</button></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="crackbtn">🔓 Crack</button><button class="btn sm ghost" id="getwl">⬇ Get rockyou</button></div>
     <div id="crackout" class="hidden" style="margin-top:8px"></div>
   </div>
 </section>
@@ -438,6 +438,7 @@ async function loadKeys(){
   $("#capsel").innerHTML=caps.length?caps.map(f=>`<option>${f}</option>`).join(""):'<option value="">(no captures yet — take one in Attack)</option>';
 }
 $("#capref").onclick=loadKeys;
+$("#getwl").onclick=async()=>{const o=$("#crackout");o.classList.remove("hidden");o.textContent="starting…";const r=await exec("getwordlist");o.textContent=(r.out||r.err||"(no output)");setTimeout(chroot,4000);};
 $("#crackbtn").onclick=async()=>{
   const cap=$("#capsel").value, wl=$("#wl").value.trim(), o=$("#crackout");
   o.classList.remove("hidden");o.className="mono";o.style.marginTop="8px";

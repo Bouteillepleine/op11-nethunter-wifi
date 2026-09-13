@@ -335,7 +335,9 @@ case "$1" in
   # ---- on-device cracking (bundled aircrack-ng; wordlist from chroot rockyou or your own) ----
   crackstatus)
     [ -x "$ACK" ] || { echo "nobin"; exit 0; }
-    [ -n "$(_rockyou)" ] && echo "ready" || echo "nowordlist" ;;
+    if [ -n "$(_rockyou)" ]; then echo "ready"
+    elif [ -f /sdcard/Download/rockyou.txt.part ]; then echo "downloading"
+    else echo "nowordlist"; fi ;;
   # Does the mac80211 we ship match the cfg80211 THIS device runs? The drivers
   # resolve against our mac80211, but our mac80211 resolves against the ROM's
   # cfg80211 - and a single mismatched CRC there is not a failed insmod, it is a
@@ -372,6 +374,24 @@ case "$1" in
         else print "OK: our mac80211 matches this device cfg80211"
       }' "$T/.nhdev" "$T/.nhours"
     rm -f "$T/.nhdev" "$T/.nhours" ;;
+  # rockyou is 134 MB and a generic public list, so it is fetched on demand
+  # rather than bundled. _rockyou() also accepts a .gz and gunzips it, so a
+  # hand-copied rockyou.txt.gz in /sdcard/Download works just as well.
+  getwordlist)
+    url=${2:-https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt}
+    dst=${3:-/sdcard/Download/rockyou.txt}
+    [ -s "$dst" ] && { echo "already installed: $dst"; exit 0; }
+    command -v curl >/dev/null 2>&1 || { echo "no curl here - copy rockyou.txt or rockyou.txt.gz into /sdcard/Download yourself"; exit 0; }
+    sh "$0" getwordliststop >/dev/null 2>&1
+    mkdir -p "$(dirname "$dst")" 2>/dev/null
+    ( curl -fsSL --retry 3 -o "$dst.part" "$url" && mv "$dst.part" "$dst" && chmod 644 "$dst" ) >/dev/null 2>&1 &
+    echo $! > "$MODDIR/.wl.pid"
+    echo "downloading rockyou (~134 MB) -> $dst"
+    echo "it keeps going in the background; check Wordlists again in a minute" ;;
+  getwordliststop)
+    [ -f "$MODDIR/.wl.pid" ] && kill "$(cat "$MODDIR/.wl.pid")" 2>/dev/null
+    rm -f "$MODDIR/.wl.pid" /sdcard/Download/rockyou.txt.part
+    echo "download stopped" ;;
   # hashcat-ready hashes for the PC route (hashcat -m 22000)
   hashes)
     [ -x "$HCXT" ] || { echo "hcxpcapngtool not bundled in this build"; exit 0; }
@@ -384,7 +404,11 @@ case "$1" in
   wordlists)
     ls -1 "$KROOT/usr/share/wordlists/" 2>/dev/null | grep -iE '\.(txt|lst|gz|dic)$' | head -30
     [ -f /sdcard/Download/rockyou.txt ] && echo "/sdcard/Download/rockyou.txt"
-    [ -d "$KROOT/usr/share/wordlists" ] || [ -f /sdcard/Download/rockyou.txt ] || echo "(no wordlist — install chroot or put rockyou.txt on /sdcard)" ;;
+    if [ -f /sdcard/Download/rockyou.txt.part ]; then
+      echo "(downloading: $(( $(stat -c %s /sdcard/Download/rockyou.txt.part 2>/dev/null || echo 0) / 1048576 )) MB of ~134 MB)"
+    elif [ ! -d "$KROOT/usr/share/wordlists" ] && [ ! -f /sdcard/Download/rockyou.txt ]; then
+      echo "(no wordlist — tap Get rockyou, or put rockyou.txt(.gz) in /sdcard/Download)"
+    fi ;;
   crack)
     [ -x "$ACK" ] || { echo "aircrack-ng not bundled in this build"; exit 0; }
     cap="$2"; [ -f "$cap" ] || cap="$CAPDIR/$2"
@@ -546,5 +570,5 @@ case "$1" in
   autoload) [ "$2" = on ] && touch "$MODDIR/auto_load" || rm -f "$MODDIR/auto_load"; echo "autoload $2" ;;
   dmesg)   dmesg 2>/dev/null | grep -iE "rtl|88[0-9]2|ath9k|mt76|rtw|cfg80211|ieee80211|wlan|usb .*net" | tail -40 ;;
   iwver)   "$IW" --version 2>&1 ;;
-  *) echo "usage: status|detect|loadmatch|find|startmon|stopmon|scan|hop|hopstop|load|unload|reload|monitor|channel|mac|txpower|txpreset|region|powersave|profile|aprofile|usbinfo|link|verify|diag|autoload|dmesg|iwver  attack: deauth|deauthstop|capture|capturestop|captures|pmkid|pmkidstop|hashes|crack|crackstatus|wordlists|savedpw  cam: camlist|caminfo|camsnap|camsave|camrec  cctv: cctvscan|cctvpaths|cctvbrand|cctvonvif|cctvcreds|cctvsnap|cctvrec|cctvsave|cctvlist|cctvdel" ;;
+  *) echo "usage: status|detect|loadmatch|find|startmon|stopmon|scan|hop|hopstop|load|unload|reload|monitor|channel|mac|txpower|txpreset|region|powersave|profile|aprofile|usbinfo|link|verify|diag|autoload|dmesg|iwver  attack: deauth|deauthstop|capture|capturestop|captures|pmkid|pmkidstop|hashes|crack|crackstatus|wordlists|getwordlist|savedpw  cam: camlist|caminfo|camsnap|camsave|camrec  cctv: cctvscan|cctvpaths|cctvbrand|cctvonvif|cctvcreds|cctvsnap|cctvrec|cctvsave|cctvlist|cctvdel" ;;
 esac

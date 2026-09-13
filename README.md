@@ -69,6 +69,12 @@ Open the module's WebUI, or drive the backend directly:
     sh wifi-ctl.sh pmkid wlan1 <bssid>            # refuses without a target
     sh wifi-ctl.sh hashes <capture>               # -> .hc22000 for hashcat -m 22000
     sh wifi-ctl.sh crack <capture> [wordlist]     # bundled aircrack-ng, on device
+    sh wifi-ctl.sh getwordlist                    # fetch rockyou to /sdcard/Download
+
+rockyou is not bundled — 134 MB of generic public wordlist against a 12 MB module.
+`getwordlist` pulls it with the phone's own curl, or drop a `rockyou.txt`/`rockyou.txt.gz`
+into `/sdcard/Download` yourself (the .gz is gunzipped on first use). On-device cracking is
+CPU-only; for a full wordlist use `hashes` and run hashcat on a PC.
 
 A capture with no client is a capture with no handshake. Deauth only helps if the station
 honours it; forcing a device you control to re-associate is more reliable.

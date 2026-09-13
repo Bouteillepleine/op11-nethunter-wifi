@@ -12,3 +12,4 @@ cams.conf
 auto_load
 update
 wordlist.txt
+.wl.pid
