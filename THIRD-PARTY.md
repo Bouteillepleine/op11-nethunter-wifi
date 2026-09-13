@@ -3,7 +3,7 @@
 This module redistributes binaries and firmware it did not author. Sources and licences
 below; where provenance is inherited rather than built here, that is said plainly.
 
-## Kernel modules — GPL-2.0
+## Kernel modules: GPL-2.0
 
 `mac80211.ko` and the 49 modules in `drivers/` are built from the Linux kernel. Corresponding
 source: the GKI tree in the manifest of
