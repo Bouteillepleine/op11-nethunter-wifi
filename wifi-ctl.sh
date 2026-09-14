@@ -60,6 +60,34 @@ _set_txpower() {
   if [ "$rc" = 0 ]; then echo "txpower ${p}mBm (now $("$IW" dev "$i" info | awk "/txpower/{print \$2, \$3}"))"
   else echo "${o:-txpower not accepted by this driver}"; fi
 }
+# ath9k force-selects MAC80211_LEDS, so every driver we ship is linked against
+# a mac80211 that exports __ieee80211_*_led_*. The stock one does not export
+# them, and loading rtw_core against it fails with:
+#   rtw_core: Unknown symbol __ieee80211_create_tpt_led_trigger (err -2)
+# service.sh swaps mac80211 at boot, but only when auto_load is set - so any
+# load started from the WebUI on a device that never autoloaded hit exactly
+# that. Every load path now makes sure ours is in first. Reported by a tester
+# on 2026-09-14.
+_mac80211_is_ours() { grep -q ' __ieee80211_create_tpt_led_trigger' /proc/kallsyms 2>/dev/null; }
+_swap_mac80211() {
+  [ -f "$MODDIR/mac80211.ko" ] || return 0
+  _mac80211_is_ours && return 0
+  # Unload exactly the modules we ship, several passes deep: these are
+  # dependency chains and a name regex both misses members (mt7921_*, mt792x_*
+  # do not match an mt76 prefix) and cannot remove a library still held by its
+  # own dependants. lsmod spells names with underscores, the files with dashes.
+  for p in 1 2 3 4 5 6; do
+    for m in $(_drivers | tr "-" "_"); do rmmod "$m" 2>/dev/null; done
+  done
+  if ! rmmod mac80211 2>/dev/null; then
+    echo "cannot replace mac80211: still in use by $(lsmod | awk '$1=="mac80211"{print $4}')" >&2
+    return 1
+  fi
+  insmod "$MODDIR/mac80211.ko" 2>/dev/null
+  if _mac80211_is_ours; then return 0; fi
+  echo "our mac80211 did not load - drivers will fail on __ieee80211_*_led_* symbols" >&2
+  return 1
+}
 _wtstubs() {
   for t in iwpriv iwconfig; do
     [ -x "/tmp/$t" ] && continue
@@ -169,6 +197,7 @@ case "$1" in
   detect) _detect ;;
   # Load ONLY the driver matching a plugged adapter (cleaner + stealthier).
   loadmatch)
+    _swap_mac80211 || true
     _detect | while IFS='	' read -r vp drv name; do
       _load_retry $(_family "$drv")
       _loaded "$drv" && echo "· $name: loaded ($drv)" || echo "· $name: $drv failed (see dmesg)"
@@ -176,6 +205,7 @@ case "$1" in
     [ -z "$(_detect)" ] && echo "no known adapter detected — plug it in, or use Load all"
     ;;
   startmon)
+    _swap_mac80211 || true
     sh "$0" loadmatch >/dev/null 2>&1 || true
     for d in $(_drivers); do _loaded "$d" || insmod "$DRV/$d.ko" 2>/dev/null; done
     i=$(_extiface); [ -z "$i" ] && { echo "no external adapter found — is it plugged in?"; exit 0; }
@@ -559,7 +589,12 @@ case "$1" in
         "$(cat /sys/class/net/$i/operstate 2>/dev/null | grep -q up && echo true || echo false)" \
         "$(_usbinfo "$i")"; done
     printf ']}' ;;
-  load)   t=$2; if [ "$t" = all ]; then _load_retry $(_drivers); else _load_retry $(_family "$t"); fi; echo OK ;;
+  load)
+    _swap_mac80211 || true
+    t=$2; if [ "$t" = all ]; then _load_retry $(_drivers); else _load_retry $(_family "$t"); fi
+    # say which ones did not make it, instead of a bare OK
+    miss=""; for d in $( [ "$t" = all ] && _drivers || _family "$t" ); do _loaded "$d" || miss="$miss $d"; done
+    [ -n "$miss" ] && echo "not loaded:$miss" || echo OK ;;
   unload) t=$2; ch=1
     while [ "$ch" = 1 ]; do ch=0   # retry: leaf modules first, then bases as their refcount hits 0
       for d in $(_drivers); do { [ "$t" = all ] || [ "$t" = "$d" ]; } || continue
