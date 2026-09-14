@@ -105,7 +105,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--c
 <script>try{var _t=localStorage.getItem("nhtheme");if(_t)document.documentElement.setAttribute("data-theme",_t);}catch(e){}</script>
 <header>
   <div class="logo">📡</div>
-  <div><h1>Nethunter Wi-Fi</h1><div class="sub" id="hdrsub">OnePlus 11</div></div>
+  <div><h1>Nethunter Wi-Fi</h1><div class="sub" id="hdrsub">OnePlus 15</div></div>
   <button class="themebtn" id="themebtn" aria-label="theme">🌙</button>
 </header>
 
@@ -395,7 +395,7 @@ async function refresh(){
   }else{$("#adapter").innerHTML='<div class="muted">No external adapter detected. Plug one in via OTG, then Refresh.</div>';$("#curmac").textContent="—";}
   $("#iwwarn").textContent=s.iw?"":"· iw missing";
   $("#autoload").checked=!!s.autoload;
-  $("#hdrsub").textContent=`OnePlus 11 · ${s.drivers.filter(d=>d.loaded).length}/${s.drivers.length} loaded`;
+  $("#hdrsub").textContent=`OnePlus 15 · ${s.drivers.filter(d=>d.loaded).length}/${s.drivers.length} loaded`;
 }
 async function run(a,m){toast(m||"working…");const r=await exec(a);if(r.errno&&r.err)toast(r.err);else if(r.out)toast(r.out.split("\n")[0]);await refresh();}
 async function refreshCaps(){const r=await exec("captures");const c=(r.out||"").split("\n").map(x=>x.trim()).filter(x=>x&&x!=='(none)');$("#caps").textContent=c.length?("captures: "+c.join(", ")):"";}
@@ -566,7 +566,7 @@ $("#diagbtn").onclick=async()=>{const l=$("#log");l.classList.remove("hidden");l
 $("#dmesgbtn").onclick=async()=>{const l=$("#log");l.classList.remove("hidden");l.textContent="…";const r=await exec("dmesg");l.textContent=r.out||"(nothing)";};
 // ---- multilingual Help (auto-detect; default English) ----
 const HELP={
- en:{name:"English",nav:"Help",head:"User guide",intro:"Wi-Fi & camera toolkit for the OP11: Wi-Fi injection (49 drivers + firmware), network auditing, USB webcam, CCTV/DVR cameras and handshake cracking — all from this WebUI.",s:[
+ en:{name:"English",nav:"Help",head:"User guide",intro:"Wi-Fi & camera toolkit for the OP11: Wi-Fi injection (33 drivers + firmware), network auditing, USB webcam, CCTV/DVR cameras and handshake cracking — all from this WebUI.",s:[
   {i:"🔌",h:"Before you start",b:["Plug an **injection-capable USB Wi-Fi adapter** into the OTG hub.","Chips (firmware built in): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","A **USB (UVC) webcam** also plugs into OTG — no driver needed.","⚠️ Use only on **your own gear** and authorized networks."]},
   {i:"⚡",h:"Home",sub:"Detect the adapter, load its driver, go monitor.",b:["**Start Monitor Mode** — one tap: detect + load driver + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Driver list with toggles, plus **Load all** / **Unload all** / **Reload**."]},
   {i:"📡",h:"Radio",sub:"Card settings and network discovery.",b:["**Scan** nearby networks (tap a result to target it in Attack).","Channel · TX power · region · power-save off · **MAC** spoof · channel **hop**."]},
@@ -576,7 +576,7 @@ const HELP={
   {i:"⚙️",h:"Tools",sub:"Firmware, settings, diagnostics.",b:["**Firmware** check (already bundled) · **Settings** (auto-load, profiles) · **Diagnostics** & Wi-Fi dmesg."]},
   {i:"🍳",h:"Quick recipes",b:["**Crack a Wi-Fi (yours):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (or PMKID) → Keys Crack.","**See my camera:** Cam ONVIF → tap it → paths → add `user:pass` → Live.","**Recover a camera login:** Cam `🔑` defaults; if it fails, `🎣 Sniff` while opening the camera in your app."]},
   {i:"⚠️",h:"Good to know",b:["The **running…** badge (top-right) means an operation is in progress.","The drivers are built against the **stock GKI ABI**, so they load on any compatible OP11 kernel — no need to pair them with one specific build.","Your own gear / authorized networks only."]}]},
- fr:{name:"Français",nav:"Aide",head:"Mode d'emploi",intro:"Boîte à outils Wi-Fi & caméras pour le OP11 : injection Wi-Fi (49 pilotes + firmware), audit réseau, webcam USB, caméras CCTV/DVR et crackage de handshakes — depuis cette interface.",s:[
+ fr:{name:"Français",nav:"Aide",head:"Mode d'emploi",intro:"Boîte à outils Wi-Fi & caméras pour le OP11 : injection Wi-Fi (33 pilotes + firmware), audit réseau, webcam USB, caméras CCTV/DVR et crackage de handshakes — depuis cette interface.",s:[
   {i:"🔌",h:"Avant de commencer",b:["Branche un **adaptateur Wi-Fi USB** (injection) sur le hub **OTG**.","Puces (firmware inclus) : **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Une **webcam USB (UVC)** se branche aussi en OTG — aucun pilote.","⚠️ Uniquement sur **ton matériel** et des réseaux autorisés."]},
   {i:"⚡",h:"Accueil",sub:"Détecte l'adaptateur, charge le pilote, passe en moniteur.",b:["**Start Monitor Mode** — un tap : détection + pilote + moniteur.","**Load matching** · **Stop monitor** · **Refresh**.","Liste des pilotes avec interrupteurs, plus **Load all** / **Unload all** / **Reload**."]},
   {i:"📡",h:"Radio",sub:"Réglages carte et repérage des réseaux.",b:["**Scan** des réseaux (touche un résultat pour le cibler dans Attaque).","Canal · puissance TX · région · éco d'énergie off · **MAC** · saut de canaux (**hop**)."]},
@@ -586,7 +586,7 @@ const HELP={
   {i:"⚙️",h:"Outils",sub:"Firmware, réglages, diagnostics.",b:["**Firmware** (déjà inclus) · **Réglages** (auto-load, profils) · **Diagnostics** & dmesg Wi-Fi."]},
   {i:"🍳",h:"Recettes rapides",b:["**Cracker un Wi-Fi (le tien) :** Accueil Start Monitor → Radio Scan → Attaque Capture+Deauth (ou PMKID) → Clés Crack.","**Voir ma caméra :** Cam ONVIF → touche-la → paths → ajoute `user:pass` → Live.","**Retrouver un login caméra :** Cam `🔑` défauts ; sinon `🎣 Sniff` en ouvrant la caméra dans ton appli."]},
   {i:"⚠️",h:"Bon à savoir",b:["Le badge **running…** (haut à droite) = opération en cours.","Les pilotes sont compilés pour l'**ABI GKI standard** : ils chargent sur n'importe quel noyau OP11 compatible — pas besoin de les apparier à un build précis.","Ton matériel / réseaux autorisés uniquement."]}]},
- de:{name:"Deutsch",nav:"Hilfe",head:"Bedienungsanleitung",intro:"WLAN- & Kamera-Toolkit fürs OP11: WLAN-Injection (49 Treiber + Firmware), Netzwerk-Audit, USB-Webcam, CCTV/DVR-Kameras und Handshake-Cracking — alles über diese Oberfläche.",s:[
+ de:{name:"Deutsch",nav:"Hilfe",head:"Bedienungsanleitung",intro:"WLAN- & Kamera-Toolkit fürs OP11: WLAN-Injection (33 Treiber + Firmware), Netzwerk-Audit, USB-Webcam, CCTV/DVR-Kameras und Handshake-Cracking — alles über diese Oberfläche.",s:[
   {i:"🔌",h:"Bevor du startest",b:["Steck einen **injektionsfähigen USB-WLAN-Adapter** an den **OTG**-Hub.","Chips (Firmware integriert): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 & AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Eine **USB-Webcam (UVC)** geht auch per OTG — ohne Treiber.","⚠️ Nur an **eigener Hardware** und in autorisierten Netzen."]},
   {i:"⚡",h:"Start",sub:"Adapter erkennen, Treiber laden, Monitor-Modus.",b:["**Start Monitor Mode** — ein Tipp: Erkennen + Treiber + Monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Treiberliste mit Schaltern, plus **Load all** / **Unload all** / **Reload**."]},
   {i:"📡",h:"Radio",sub:"Karten-Einstellungen und Netzsuche.",b:["**Scan** der Netze (Ergebnis antippen, um es in Attack zu zielen).","Kanal · Sendeleistung · Region · Stromsparen aus · **MAC** · Kanal-**Hop**."]},
@@ -596,7 +596,7 @@ const HELP={
   {i:"⚙️",h:"Tools",sub:"Firmware, Einstellungen, Diagnose.",b:["**Firmware**-Prüfung (schon dabei) · **Einstellungen** (Auto-Load, Profile) · **Diagnose** & WLAN-dmesg."]},
   {i:"🍳",h:"Schnelle Rezepte",b:["**WLAN cracken (deins):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (oder PMKID) → Keys Crack.","**Meine Kamera sehen:** Cam ONVIF → antippen → paths → `user:pass` → Live.","**Kamera-Login wiederfinden:** Cam `🔑` Standard; sonst `🎣 Sniff`, während du die Kamera in deiner App öffnest."]},
   {i:"⚠️",h:"Gut zu wissen",b:["Das **running…**-Abzeichen (oben rechts) = etwas läuft.","Die Treiber sind gegen die **Standard-GKI-ABI** gebaut und laden auf jedem kompatiblen OP11-Kernel — keine Bindung an einen bestimmten Build.","Nur eigene Hardware / autorisierte Netze."]}]},
- es:{name:"Español",nav:"Ayuda",head:"Manual de uso",intro:"Kit Wi-Fi y cámaras para el OP11: inyección Wi-Fi (49 controladores + firmware), auditoría de red, webcam USB, cámaras CCTV/DVR y crackeo de handshakes — todo desde esta interfaz.",s:[
+ es:{name:"Español",nav:"Ayuda",head:"Manual de uso",intro:"Kit Wi-Fi y cámaras para el OP11: inyección Wi-Fi (33 controladores + firmware), auditoría de red, webcam USB, cámaras CCTV/DVR y crackeo de handshakes — todo desde esta interfaz.",s:[
   {i:"🔌",h:"Antes de empezar",b:["Conecta un **adaptador Wi-Fi USB** (con inyección) al hub **OTG**.","Chips (firmware incluido): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 y AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Una **webcam USB (UVC)** también va por OTG — sin controlador.","⚠️ Solo en **tu propio equipo** y redes autorizadas."]},
   {i:"⚡",h:"Inicio",sub:"Detecta el adaptador, carga el controlador, modo monitor.",b:["**Start Monitor Mode** — un toque: detectar + controlador + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Lista de controladores con interruptores, más **Load all** / **Unload all** / **Reload**."]},
   {i:"📡",h:"Radio",sub:"Ajustes de la tarjeta y descubrimiento de redes.",b:["**Scan** de redes cercanas (toca un resultado para fijarlo en Attack).","Canal · potencia TX · región · ahorro off · **MAC** · salto de canal (**hop**)."]},
@@ -606,7 +606,7 @@ const HELP={
   {i:"⚙️",h:"Tools",sub:"Firmware, ajustes, diagnóstico.",b:["Comprobación de **firmware** (ya incluido) · **Ajustes** (auto-carga, perfiles) · **Diagnóstico** y dmesg Wi-Fi."]},
   {i:"🍳",h:"Recetas rápidas",b:["**Crackear un Wi-Fi (el tuyo):** Home Start Monitor → Radio Scan → Attack Capture+Deauth (o PMKID) → Keys Crack.","**Ver mi cámara:** Cam ONVIF → tócala → paths → `user:pass` → Live.","**Recuperar un login de cámara:** Cam `🔑` por defecto; si falla, `🎣 Sniff` abriendo la cámara en tu app."]},
   {i:"⚠️",h:"Bueno saber",b:["El distintivo **running…** (arriba a la derecha) = algo está en marcha.","Los controladores están compilados para la **ABI GKI estándar**: cargan en cualquier kernel OP11 compatible, sin emparejarlos con un build concreto.","Solo tu equipo / redes autorizadas."]}]},
- it:{name:"Italiano",nav:"Aiuto",head:"Guida",intro:"Kit Wi-Fi e telecamere per l'OP11: iniezione Wi-Fi (49 driver + firmware), audit di rete, webcam USB, telecamere CCTV/DVR e cracking di handshake — tutto da questa interfaccia.",s:[
+ it:{name:"Italiano",nav:"Aiuto",head:"Guida",intro:"Kit Wi-Fi e telecamere per l'OP11: iniezione Wi-Fi (33 driver + firmware), audit di rete, webcam USB, telecamere CCTV/DVR e cracking di handshake — tutto da questa interfaccia.",s:[
   {i:"🔌",h:"Prima di iniziare",b:["Collega un **adattatore Wi-Fi USB** (con iniezione) all'hub **OTG**.","Chip (firmware incluso): **RTL** 8812au/8821au/88x2bu · **Atheros** AR9271 e AR9170 · **MediaTek** MT7601U/MT7612U/MT7921 · **Ralink** RT2800 · **Realtek** rtw88.","Una **webcam USB (UVC)** si collega anch'essa in OTG — senza driver.","⚠️ Solo su **hardware tuo** e reti autorizzate."]},
   {i:"⚡",h:"Home",sub:"Rileva l'adattatore, carica il driver, modo monitor.",b:["**Start Monitor Mode** — un tocco: rileva + driver + monitor.","**Load matching** · **Stop monitor** · **Refresh**.","Elenco driver con interruttori, più **Load all** / **Unload all** / **Reload**."]},
   {i:"📡",h:"Radio",sub:"Impostazioni scheda e scoperta reti.",b:["**Scan** delle reti (tocca un risultato per puntarlo in Attack).","Canale · potenza TX · regione · risparmio off · **MAC** · salto canale (**hop**)."]},

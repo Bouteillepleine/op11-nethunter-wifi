@@ -5,7 +5,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 D="${1:-.}"
 rc=0
-say() { echo "[$(basename "$(cd "$D" && pwd)")] $*"; }
+say() { echo "[$(sed -n 's/^id=//p' "$D/module.prop" 2>/dev/null || echo module)] $*"; }
 
 for f in action.sh customize.sh post-fs-data.sh service.sh uninstall.sh wifi-ctl.sh; do
   [ -f "$D/$f" ] || continue

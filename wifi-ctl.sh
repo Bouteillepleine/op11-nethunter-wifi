@@ -2,7 +2,7 @@
 # OP11 NetHunter Wi-Fi
 # Copyright (C) 2026 Bouteillepleine
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Backend for the OP11 Nethunter Wi-Fi module WebUI. All output on stdout.
+# Backend for the OP15 Nethunter Wi-Fi module WebUI. All output on stdout.
 MODDIR=${0%/*}
 DRV="$MODDIR/drivers"
 PROFILE="$MODDIR/profile.conf"
@@ -31,13 +31,17 @@ _rockyou() { for c in "$KROOT/usr/share/wordlists/rockyou.txt" /sdcard/Download/
 # with "Ndiswrapper doesn't support monitor mode". We drive monitor mode through
 # nl80211 instead, so give it stubs that simply fail: /tmp is the only directory
 # osdep searches that is writable here, and it is cleared on every boot.
-# Transmitting works on this device. Measured on OP11 2026-09-13 with lwfinger
-# rtw88: an mdk4 deauth burst put 255 frames on the air, read back off the air
-# by a concurrent capture, with the kernel untouched. The OP15 TX panic does
-# NOT reproduce here, so the guard below is opt-in rather than opt-out.
+# ANY transmit on this adapter panics the kernel -- this is not specific to
+# injection or to monitor mode. Measured on OP15 6.12 with the aircrack-ng
+# 8812au tree: mdk4 (WEXT/osdep), hcxdumptool 7.1.2 (nl80211) and a plain
+# managed-mode `iw scan` (probe requests, the most ordinary TX there is) all
+# take the device down. tx_packets never increments, and the adapter sometimes
+# drops off the USB bus instead of panicking -- the same fault racing to a
+# different outcome. Receiving is unaffected and runs indefinitely, which is why
+# monitor + passive capture is the one thing that always worked.
+# Set NH_ALLOW_TX=1 to override when testing a candidate driver fix.
 _tx_guard() {
-  # Set NH_BLOCK_TX=1 to refuse transmitting anyway.
-  [ "${NH_BLOCK_TX:-0}" = "1" ] || return 0
+  [ "$NH_ALLOW_TX" = "1" ] && return 0
   echo "refused: transmitting panics the kernel on this driver (RX-only)."
   echo "monitor mode and passive capture work; anything that transmits does not."
   echo "capture passively and wait for a client to associate to get a handshake."
@@ -45,49 +49,6 @@ _tx_guard() {
   return 1
 }
 
-# rtw88 refuses SIOCSIWTXPOW on a monitor interface (-95) but accepts it in
-# managed, and the value survives the switch back -- so set it in managed and
-# restore the mode, instead of telling the user it is unsupported.
-_set_txpower() {
-  i=$1; p=$2; was=$(_mode_of "$i")
-  if [ "$was" = monitor ]; then
-    ip link set "$i" down 2>/dev/null; "$IW" dev "$i" set type managed 2>/dev/null; ip link set "$i" up 2>/dev/null
-  fi
-  o=$("$IW" dev "$i" set txpower fixed "$p" 2>&1); rc=$?
-  if [ "$was" = monitor ]; then
-    ip link set "$i" down 2>/dev/null; "$IW" dev "$i" set type monitor 2>/dev/null; ip link set "$i" up 2>/dev/null
-  fi
-  if [ "$rc" = 0 ]; then echo "txpower ${p}mBm (now $("$IW" dev "$i" info | awk "/txpower/{print \$2, \$3}"))"
-  else echo "${o:-txpower not accepted by this driver}"; fi
-}
-# ath9k force-selects MAC80211_LEDS, so every driver we ship is linked against
-# a mac80211 that exports __ieee80211_*_led_*. The stock one does not export
-# them, and loading rtw_core against it fails with:
-#   rtw_core: Unknown symbol __ieee80211_create_tpt_led_trigger (err -2)
-# service.sh swaps mac80211 at boot, but only when auto_load is set - so any
-# load started from the WebUI on a device that never autoloaded hit exactly
-# that. Every load path now makes sure ours is in first. Reported by a tester
-# on 2026-09-14.
-_mac80211_is_ours() { grep -q ' __ieee80211_create_tpt_led_trigger' /proc/kallsyms 2>/dev/null; }
-_swap_mac80211() {
-  [ -f "$MODDIR/mac80211.ko" ] || return 0
-  _mac80211_is_ours && return 0
-  # Unload exactly the modules we ship, several passes deep: these are
-  # dependency chains and a name regex both misses members (mt7921_*, mt792x_*
-  # do not match an mt76 prefix) and cannot remove a library still held by its
-  # own dependants. lsmod spells names with underscores, the files with dashes.
-  for p in 1 2 3 4 5 6; do
-    for m in $(_drivers | tr "-" "_"); do rmmod "$m" 2>/dev/null; done
-  done
-  if ! rmmod mac80211 2>/dev/null; then
-    echo "cannot replace mac80211: still in use by $(lsmod | awk '$1=="mac80211"{print $4}')" >&2
-    return 1
-  fi
-  insmod "$MODDIR/mac80211.ko" 2>/dev/null
-  if _mac80211_is_ours; then return 0; fi
-  echo "our mac80211 did not load - drivers will fail on __ieee80211_*_led_* symbols" >&2
-  return 1
-}
 _wtstubs() {
   for t in iwpriv iwconfig; do
     [ -x "/tmp/$t" ] && continue
@@ -135,15 +96,16 @@ _usbinfo() {
 # VID:PID -> "driver<TAB>Chipset". Covers the common injection adapters.
 _lookup() {
   case "$1" in
-    0bda:8812|0bda:881a|0bda:881b|0bda:881c) printf 'rtw_8812au\tRTL8812AU';;
-    0bda:8811|0bda:a811|0bda:0811|2357:0101|2357:010c|0b05:17d2) printf 'rtw_8821au\tRTL8811AU/8821AU';;
-    0bda:b812|0bda:b82c|0bda:b811|2357:012d|2357:0138) printf 'rtw_8822bu\tRTL8812BU/8822BU';;
+    0bda:8812|0bda:881a|0bda:881b|0bda:881c) printf '8812au\tRTL8812AU';;
+    0bda:8811|0bda:a811|0bda:0811|2357:0101|2357:010c|0b05:17d2) printf '8821au\tRTL8811AU/8821AU';;
+    0bda:b812|0bda:b82c|0bda:b811|2357:012d|2357:0138) printf '88x2bu\tRTL8812BU/8822BU';;
     0cf3:9271|0cf3:7015|040d:3801|0cf3:1006|0cf3:b002) printf 'ath9k_htc\tAtheros AR9271';;
     148f:7601) printf 'mt7601u\tMediaTek MT7601U';;
     0e8d:7961|3574:6211|0e8d:7922|13b1:0045) printf 'mt7921u\tMediaTek MT7921 (WiFi6)';;
     0e8d:7612|0e8d:7632|0e8d:7610|0846:9053|0b05:17eb|043e:310c) printf 'mt76x2u\tMediaTek MT7612U';;
-    0bda:c811|0bda:c820|0bda:c82c|331b:1010) printf 'rtw_8821cu\tRTL8821CU';;
-    0bda:d723|0bda:d722) printf 'rtw_8723du\tRTL8723DU';;
+    0bda:c811|0bda:c820|0bda:c82c|0bda:c811|331b:1010) printf 'rtw88_8821cu\tRTL8821CU';;
+    0bda:d723|0bda:d722) printf 'rtw88_8723du\tRTL8723DU';;
+    0bda:c811) printf 'rtw88_8822cu\tRTL8822CU';;
     148f:5370|148f:5372|148f:3070|148f:3572|148f:5572|0b05:17d1) printf 'rt2800usb\tRalink RT2800USB';;
     0cf3:9170|0cf3:1001|0846:9010|cace:0300|07d1:3c10|0cf3:1010|04bb:093f) printf 'carl9170\tAtheros AR9170';;
     *) printf '\t';;
@@ -172,13 +134,7 @@ _family() {
     mt76*)   echo "mt76 mt76-usb mt76-connac-lib mt792x-lib mt792x-usb mt7921-common mt7921u" ;;
     mt7601*) echo "mt7601u" ;;
     rt2800*) echo "rt2x00lib rt2x00usb rt2800lib rt2800usb" ;;
-    rtw_8812au) echo "rtw_core rtw_usb rtw_88xxa rtw_8812a rtw_8812au" ;;
-    rtw_8821au) echo "rtw_core rtw_usb rtw_88xxa rtw_8821a rtw_8821au" ;;
-    rtw_8822bu) echo "rtw_core rtw_usb rtw_8822b rtw_8822bu" ;;
-    rtw_8821cu) echo "rtw_core rtw_usb rtw_8821c rtw_8821cu" ;;
-    rtw_8723du) echo "rtw_core rtw_usb rtw_8723x rtw_8723d rtw_8723du" ;;
-    rtw_8822cu) echo "rtw_core rtw_usb rtw_8822c rtw_8822cu" ;;
-    rtw*)    echo "rtw_core rtw_usb $1" ;;
+    rtw88*)  echo "rtw88_core rtw88_usb rtw88_8822b rtw88_8822bu rtw88_8821c rtw88_8821cu rtw88_8723d rtw88_8723du rtw88_8723x" ;;
     *)       echo "$1" ;;
   esac
 }
@@ -197,7 +153,6 @@ case "$1" in
   detect) _detect ;;
   # Load ONLY the driver matching a plugged adapter (cleaner + stealthier).
   loadmatch)
-    _swap_mac80211 || true
     _detect | while IFS='	' read -r vp drv name; do
       _load_retry $(_family "$drv")
       _loaded "$drv" && echo "· $name: loaded ($drv)" || echo "· $name: $drv failed (see dmesg)"
@@ -205,7 +160,6 @@ case "$1" in
     [ -z "$(_detect)" ] && echo "no known adapter detected — plug it in, or use Load all"
     ;;
   startmon)
-    _swap_mac80211 || true
     sh "$0" loadmatch >/dev/null 2>&1 || true
     for d in $(_drivers); do _loaded "$d" || insmod "$DRV/$d.ko" 2>/dev/null; done
     i=$(_extiface); [ -z "$i" ] && { echo "no external adapter found — is it plugged in?"; exit 0; }
@@ -589,12 +543,7 @@ case "$1" in
         "$(cat /sys/class/net/$i/operstate 2>/dev/null | grep -q up && echo true || echo false)" \
         "$(_usbinfo "$i")"; done
     printf ']}' ;;
-  load)
-    _swap_mac80211 || true
-    t=$2; if [ "$t" = all ]; then _load_retry $(_drivers); else _load_retry $(_family "$t"); fi
-    # say which ones did not make it, instead of a bare OK
-    miss=""; for d in $( [ "$t" = all ] && _drivers || _family "$t" ); do _loaded "$d" || miss="$miss $d"; done
-    [ -n "$miss" ] && echo "not loaded:$miss" || echo OK ;;
+  load)   t=$2; if [ "$t" = all ]; then _load_retry $(_drivers); else _load_retry $(_family "$t"); fi; echo OK ;;
   unload) t=$2; ch=1
     while [ "$ch" = 1 ]; do ch=0   # retry: leaf modules first, then bases as their refcount hits 0
       for d in $(_drivers); do { [ "$t" = all ] || [ "$t" = "$d" ]; } || continue

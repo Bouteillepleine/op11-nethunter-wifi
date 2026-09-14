@@ -1,48 +1,37 @@
-# OP11 NetHunter Wi-Fi
+# OP15 NetHunter Wi-Fi (branch `OP15`)
 
-Wi-Fi injection toolkit for the OnePlus 11 as a KernelSU/Magisk module: 49 drivers,
-firmware, a bundled userland and a WebUI.
+Wi-Fi toolkit for the OnePlus 15 as a KernelSU/Magisk module: 33 drivers, firmware,
+a bundled userland and a WebUI. **This branch is never released.**
 
-**Use it on networks you own or have written permission to test.** This tool transmits:
-deauthentication frames and PMKID solicitation are not passive, and in most places
-pointing them at someone else's network is a criminal offence.
+**Use it on networks you own or have written permission to test.**
 
-GPL-2.0-or-later, see [LICENSE](LICENSE). Bundled binaries and firmware are third-party,
-listed with their own licences and upstreams in [THIRD-PARTY.md](THIRD-PARTY.md).
+## Why there is no release
+
+Monitor mode and passive capture work. **Transmitting does not**: any TX panics the
+kernel. Measured on this device 2026-09-13 with kernel `6.12.23-android16-5` - at
+1T1R, VHT off and 5 dBm, the smallest transmit the hardware can do, it still
+panicked. So `scan`, `deauth` and `pmkid` refuse by default; `NH_ALLOW_TX=1`
+overrides, and will take the phone down.
+
+lwfinger's rtw88 is not a way round it. Built for this kernel and gate-checked
+clean (1115 symbols, 0 mismatched), it probes, loads firmware 52.14.0, and then the
+adapter leaves the USB bus - no panic, but no interface either. The same adapter and
+the same rtw88 driver inject fine on the OP11, so the fault is this phone's
+USB/xHCI/OTG side, not the driver.
 
 ## Compatibility
 
-Built and verified against:
-
 | | |
 |---|---|
-| Device | OnePlus 11 (CPH2449, kalama / SM8550) |
-| ROM | OxygenOS 16 (Android 16), `CPH2449_11.H.15_3150_202607172114` |
-| Kernel | 5.15.180, `android13-5.15` GKI |
-| ROM's cfg80211 | `vermagic=5.15.180-gef4e36add077 ... modversions` |
+| Device | OnePlus 15 (CPH2747, canoe / SM8850) |
+| ROM | OxygenOS 16 (Android 16), `CPH2747_11.A.46_0460_202607312129` |
+| Kernel | 6.12.23, `android16-6.12` GKI |
+| ROM's stack | `vermagic=6.12.23-android16-5-o-gfaa122b439b2-4k` |
 
-**Any AK3 kernel for this device should work**, not just the one it was built with. The
-modules need 468 kernel-core symbols and 96 from `cfg80211`. `cfg80211.ko` lives in
-`vendor_dlkm`, the ROM rather than the kernel zip, so flashing a different kernel does not
-change it. The core symbols are KMI-stable: three independently built module sets
-(OnePlus's own from `msm-kernel`, EmberHeart's, and this one) agree on **every** shared
-core CRC: 224, 224 and 103 symbols, zero disagreements. Verified in practice by running
-each set on the others' kernel.
+This module ships **no `mac80211.ko`**: `wonder` and `qca_cld3_peach_v2` are bound to
+the ROM's, so the drivers are built to load against it. CI enforces that.
 
-It will **not** work on a kernel that:
-
-- is built without `CONFIG_MODVERSIONS`, since the vermagic string is then compared in full
-- enforces module signatures with its own key
-- sets `CONFIG_CFG80211=y` instead of `=m`, giving a built-in cfg80211 with different CRCs
-- is a different version (6.x, or a SUBLEVEL with ABI changes)
-
-To check any of this on the device itself, after flashing a kernel or taking a ROM update:
-
-    sh wifi-ctl.sh verify            # or Tools -> Verify against this device
-
-It reads the CRCs straight out of the live `/vendor_dlkm/lib/modules/cfg80211.ko` and
-compares them with the shipped `mac80211.ko`. Same check CI runs, against whatever
-ROM is actually installed rather than a recorded snapshot.
+    sh wifi-ctl.sh verify      # checks the drivers against the live stack
 
 ## Two things that are easy to get wrong
 
